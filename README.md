@@ -1,8 +1,17 @@
 # Analyseur de Données
 
-## 📘 Description du Projet
+# Analyseur de Données
 
-Analyseur de Données est une application web construite avec Django pour analyser des fichiers de données (CSV et Excel). Elle permet aux utilisateurs de télécharger des fichiers, de calculer des statistiques descriptives (moyenne, médiane, mode, variance, etc.), d’analyser les corrélations, et de télécharger les résultats en formats CSV ou PDF. Des visualisations de données (histogrammes et régressions) sont également incluses pour aider les utilisateurs à interpréter les relations entre les variables.
+## 📑 Table des Matières
+
+1. [📘 Description du Projet](#-description-du-projet)
+2. [⚙️ Installation et Configuration](#️-installation-et-configuration)
+3. [🧩 Utilisation](#-utilisation)
+4. [🛠️ Technologies Utilisées](#️-technologies-utilisées)
+5. [📊 Exemples de Code](#-exemples-de-code)
+6. [👥 Contributeurs](#-contributeurs)
+7. [🤝 Contribution](#-contribution)
+8. [🚀 Améliorations Futures](#-améliorations-futures)
 
 ## ⚙️ Installation et Configuration
 
@@ -12,6 +21,12 @@ Analyseur de Données est une application web construite avec Django pour analys
 - pip (gestionnaire de paquets Python)
 - Django (version 5.0+)
 - Librairies supplémentaires : pandas, matplotlib, seaborn, openpyxl, reportlab
+
+## 📘 Description du Projet
+
+Analyseur de Données est une application web construite avec Django pour analyser des fichiers de données (CSV et Excel). Elle permet aux utilisateurs de télécharger des fichiers, de calculer des statistiques descriptives (moyenne, médiane, mode, variance, etc.), d’analyser les corrélations, et de télécharger les résultats en formats CSV ou PDF. Des visualisations de données (histogrammes et régressions) sont également incluses pour aider les utilisateurs à interpréter les relations entre les variables.
+
+
 
 ### Étapes d’installation
 
