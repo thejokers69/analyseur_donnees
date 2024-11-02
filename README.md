@@ -150,5 +150,3 @@ Si vous souhaitez contribuer à ce projet, veuillez suivre les étapes suivantes
 3. Commitez vos modifications (`git commit -m 'Ajout de ma fonctionnalité'`)
 4. Poussez votre branche (`git push origin feature/ma-fonctionnalité`)
 5. Ouvrez une Pull Request
-
-Merci de respecter les conventions de codage et de bien documenter vos modifications.
