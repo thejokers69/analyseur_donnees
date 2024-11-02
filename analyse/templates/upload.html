@@ -1,0 +1,37 @@
+{% comment %} ANALYSEUR_DONNEES/analyse/templates/upload.html {% endcomment %}
+{% load custom_filters %}
+{% load static %} 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Uploader un fichier Excel</title>
+    <link rel="stylesheet" href="{% static 'custom.css' %}">
+</head>
+<body>
+<div class="container mt-5">
+  <h2>Uploader un fichier Excel</h2>
+  <form method="post" enctype="multipart/form-data" class="mt-4">
+    {% csrf_token %}
+    <div class="mb-3">
+      {{ form.file.label_tag }} {{ form.file|add_class:"form-control" }}
+    </div>
+    <button type="submit" class="btn btn-primary">Upload</button>
+  </form>
+
+  {% if customization_form %}
+  <h3>Personnaliser l'analyse</h3>
+  <form method="post">
+    {% csrf_token %} {{ customization_form.as_p }}
+    <button type="submit" class="btn btn-success">Lancer l'analyse</button>
+  </form>
+  {% endif %}
+
+  <!-- Navigation Buttons -->
+  <div class="mt-5">
+    <a href="{% url 'upload' %}" class="btn btn-secondary me-2">Retour au téléchargement</a>
+    <a href="{% url 'home' %}" class="btn btn-primary">Retour à l'accueil</a>
+  </div>
+</div>
+</body>
+</html>

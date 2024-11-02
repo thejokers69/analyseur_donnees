@@ -1,0 +1,44 @@
+{% comment %} ANALYSEUR_DONNEES/analyse/templates/data_table.html {% endcomment %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tableau de Données Interactif</title>
+    <link rel="stylesheet" href="{% static 'custom.css' %}">
+    <link rel="stylesheet" href="{% static 'https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css' %}">
+    <script src="{% static 'https://code.jquery.com/jquery-3.5.1.js' %}"></script>
+    <script src="{% static 'https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js' %}"></script>
+</head>
+<body>
+
+<div class="container mt-5">
+    <h2>Tableau de Données Interactif</h2>
+    <table id="dataTable" class="display">
+        <thead>
+            <tr>
+                {% for column in columns %}
+                <th>{{ column }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            <tr>
+                {% for value in row %}
+                <td>{{ value }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('#dataTable').DataTable();
+    });
+</script>
+
+</body>
+</html>

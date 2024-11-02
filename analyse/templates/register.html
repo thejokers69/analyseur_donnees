@@ -1,0 +1,27 @@
+{% comment %} # ANALYSEUR_DONNEES/analyse/templates/register.html {% endcomment %}
+{% load custom_filters %}
+{% load static %} 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Inscription</title>
+    <link rel="stylesheet" href="{% static 'custom.css' %}">
+</head>
+<body>
+<div class="container mt-5">
+  <h2>Inscription</h2>
+  <form method="post" class="mt-4">
+    {% csrf_token %}
+    <div class="mb-3">{{ form.username.label_tag }} {{ form.username }}</div>
+    <div class="mb-3">{{ form.password1.label_tag }} {{ form.password1 }}</div>
+    <div class="mb-3">{{ form.password2.label_tag }} {{ form.password2 }}</div>
+    <button type="submit" class="btn btn-primary">S'inscrire</button>
+  </form>
+  <p class="mt-3">
+    Vous avez déjà un compte ?
+    <a href="{% url 'login' %}">Connectez-vous ici.</a>
+  </p>
+</div>
+</body>
+</html>

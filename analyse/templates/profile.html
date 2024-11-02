@@ -1,0 +1,44 @@
+{% comment %} ANALYSEUR_DONNEES/analyse/templates/profile.html {% endcomment %}
+{% load custom_filters %}
+{% load static %} 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mon Profil</title>
+    <link rel="stylesheet" href="{% static 'custom.css' %}">
+</head>
+<body>
+<div class="container mt-5">
+  <div class="card">
+    <div class="card-body">
+      <h2 class="card-title">Mon Profil</h2>
+      <p><strong>Nom d'utilisateur :</strong> {{ user.username }}</p>
+      <form method="post" class="mt-4">
+        {% csrf_token %}
+        <div class="mb-3">
+          {{ form.email.label_tag }} {{ form.email|add_class:"form-control" }}
+        </div>
+        <button type="submit" class="btn btn-primary">
+          Mettre à jour l'email
+        </button>
+      </form>
+      {% if messages %}
+      <div class="mt-3">
+        {% for message in messages %}
+        <div class="alert alert-success">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <div class="mt-4">
+        <form action="{% url 'logout' %}" method="post" style="display: inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Déconnexion</button>
+        </form>
+        <a href="{% url 'home' %}" class="btn btn-secondary ms-2">Retour à l'accueil</a>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

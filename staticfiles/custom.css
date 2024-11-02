@@ -1,0 +1,83 @@
+/* custom.css */
+
+/* Body and Container Styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    color: #343a40;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Table Styling */
+table.table {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+table.table th,
+table.table td {
+    vertical-align: middle;
+}
+
+.table th {
+    font-weight: bold;
+}
+
+/* Button Styling */
+.btn {
+    border-radius: 20px;
+    padding: 0.4rem 1rem;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-outline-primary {
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.btn-outline-primary:hover {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.btn-outline-danger {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+/* Alerts Styling */
+.alert {
+    margin-bottom: 1rem;
+}
+
+/* Titles and Headings */
+h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #333;
+}
+
+h4 {
+    font-size: 1.5rem;
+    color: #555;
+}
+
+/* Form Elements */
+.form-control {
+    border-radius: 5px;
+}

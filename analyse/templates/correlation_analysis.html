@@ -1,0 +1,25 @@
+{% comment %} ANALYSEUR_DONNEES/analyse/templates/correlation_analysis.html {% endcomment %}
+{% load static %} 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Analyse de Corrélation et de Régression</title>
+    <link rel="stylesheet" href="{% static 'custom.css' %}">
+</head>
+<body>
+
+<div class="container mt-5">
+    <h2>Analyse de Corrélation</h2>
+    <h3>Matrice de Corrélation</h3>
+    <img src="data:image/png;base64,{{ heatmap_base64 }}" alt="Correlation Heatmap">
+
+    <h3>Plots de Régression</h3>
+    {% for title, plot in reg_plots %}
+        <h4>{{ title }}</h4>
+        <img src="data:image/png;base64,{{ plot }}" alt="{{ title }}">
+    {% endfor %}
+</div>
+
+</body>
+</html>

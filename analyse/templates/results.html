@@ -1,0 +1,48 @@
+{% comment %} # ANALYSEUR_DONNEES/analyse/templates/results.html {% endcomment %}
+{% load custom_filters %}
+{% load static %} 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Résultats des analyses</title>
+    <link rel="stylesheet" href="{% static 'custom.css' %}">
+</head>
+<body>
+<div class="container mt-5">
+  <h2>Résultats des analyses</h2>
+
+  <h3 class="mt-4">Tendances centrales</h3>
+  <ul class="list-group">
+    <li class="list-group-item">Moyenne : {{ mean }}</li>
+    <li class="list-group-item">Médiane : {{ median }}</li>
+    <li class="list-group-item">Mode : {{ mode }}</li>
+  </ul>
+
+  <h3 class="mt-4">Tendances de variabilité</h3>
+  <ul class="list-group">
+    <li class="list-group-item">Variance : {{ variance }}</li>
+    <li class="list-group-item">Écart-type : {{ std_dev }}</li>
+    <li class="list-group-item">Étendue : {{ range }}</li>
+  </ul>
+
+  <h3 class="mt-4">Visualisation</h3>
+  {% for column, image_path in histograms.items %}
+  <div class="mt-3">
+    <h4>Histogramme de {{ column }}</h4>
+    <img
+      src="/{{ image_path }}"
+      alt="Histogramme de {{ column }}"
+      class="img-fluid"
+    />
+  </div>
+  {% endfor %}
+
+  <!-- Navigation Buttons -->
+  <div class="mt-5">
+    <a href="{% url 'upload' %}" class="btn btn-secondary me-2">Retour au téléchargement</a>
+    <a href="{% url 'home' %}" class="btn btn-primary">Retour à l'accueil</a>
+  </div>
+</div>
+</body>
+</html>
