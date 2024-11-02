@@ -1,7 +1,5 @@
 # Analyseur de Données
 
-# Analyseur de Données
-
 ## 📑 Table des Matières
 
 1. [📘 Description du Projet](#-description-du-projet)
