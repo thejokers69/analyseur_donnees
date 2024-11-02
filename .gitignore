@@ -1,0 +1,17 @@
+# Django specific
+*.log
+*.pot
+*.pyc
+__pycache__/
+db.sqlite3
+media/
+uploads/
+
+# Environment
+env/
+venv/
+.env
+.DS_Store
+
+# Static files
+staticfiles/
