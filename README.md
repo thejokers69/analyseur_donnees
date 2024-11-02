@@ -24,8 +24,6 @@
 
 Analyseur de Données est une application web construite avec Django pour analyser des fichiers de données (CSV et Excel). Elle permet aux utilisateurs de télécharger des fichiers, de calculer des statistiques descriptives (moyenne, médiane, mode, variance, etc.), d’analyser les corrélations, et de télécharger les résultats en formats CSV ou PDF. Des visualisations de données (histogrammes et régressions) sont également incluses pour aider les utilisateurs à interpréter les relations entre les variables.
 
-
-
 ### Étapes d’installation
 
 1. Clonez le dépôt
@@ -108,18 +106,11 @@ Analyseur de Données est une application web construite avec Django pour analys
 - **Backend** : Django (avec les applications intégrées comme Django Admin et les templates)
 - **Frontend** : HTML, CSS (Bootstrap pour le style et la mise en page)
 - **Analyse et Visualisation de Données** :
-    - Pandas : Pour le chargement et la manipulation des fichiers CSV/Excel.
-    - Matplotlib et Seaborn : Pour les visualisations de données (histogrammes, heatmaps, régressions).
+  - Pandas : Pour le chargement et la manipulation des fichiers CSV/Excel.
+  - Matplotlib et Seaborn : Pour les visualisations de données (histogrammes, heatmaps, régressions).
 - **Autres Bibliothèques** :
-    - ReportLab : Pour la génération de rapports PDF.
-    - Openpyxl : Pour la manipulation des fichiers Excel.
-
-## 📊 Exemples de Code
-
-### Exemple d’une Vue pour le Téléchargement de Fichier
-
-- ReportLab : Pour la génération de rapports PDF.
-    - Openpyxl : Pour la manipulation des fichiers Excel.
+  - ReportLab : Pour la génération de rapports PDF.
+  - Openpyxl : Pour la manipulation des fichiers Excel.
 
 ## 📊 Exemples de Code
 
@@ -141,6 +132,7 @@ def upload_file(request):
     else:
         form = UploadFileForm()
     return render(request, 'upload.html', {'form': form})
+```
 
 ## 👥 Contributeurs
 
