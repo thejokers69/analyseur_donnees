@@ -14,4 +14,49 @@ venv/
 .DS_Store
 
 # Static files
+static/
 staticfiles/
+*.sass-cache/
+*.css.map
+*.js.map
+
+# IDE and editor settings
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# Pytest
+.pytest_cache/
+.tox/
+
+# MyPy
+.mypy_cache/
+
+# Temporary files
+*.tmp
+*.bak
+*.orig
+*.out
+*.rej
+Thumbs.db
+
+# Logs and databases
+*.log
+*.sqlite3
+
+# Compiled files
+*.py[cod]
+*.pyo
+*.class
