@@ -34,3 +34,8 @@ class AnalysisCustomizationForm(forms.Form):
         columns = kwargs.pop('columns', [])
         super().__init__(*args, **kwargs)
         self.fields['columns'].choices = [(col, col) for col in columns]
+    def clean_email(self):
+    email = self.cleaned_data.get('email')
+    if User.objects.filter(email=email).exists():
+        raise forms.ValidationError("Cet email est déjà utilisé.")
+    return email

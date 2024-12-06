@@ -9,6 +9,7 @@ media/
 uploads/
 
 # Environment
+.env
 env/
 venv/
 .env
