@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
-
+from dotenv import load_dotenv
 from pathlib import Path
 import os
 from django.contrib.messages import constants as messages
@@ -24,9 +24,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
-from dotenv import load_dotenv
 
-load_dotenv()  # Charge les variables d'environnement
+load_dotenv()
 SECRET_KEY = os.getenv('django-insecure-)uvn62c=-v64jw=51*_^ykh-($jr2$&je)k(t94bejdg(8@=gq', 'default-key')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-)uvn62c=-v64jw=51*_^ykh-($jr2$&je)k(t94bejdg(8@=gq'
@@ -89,7 +88,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('DB_NAME', 'analyseur_donnees'),
-        'USER': os.getenv('DB_USER', 'user'),
+        'USER': os.getenv('DB_USER', 'thejokers'),
         'PASSWORD': os.getenv('DB_PASSWORD', 'password'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
@@ -166,6 +165,13 @@ LOGGING = {
             'level': 'ERROR',
             'class': 'logging.FileHandler',
             'filename': BASE_DIR / 'logs/error.log',
+            'formatter':'verbose',
+        },
+    },
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
         },
     },
     'loggers': {
@@ -176,3 +182,6 @@ LOGGING = {
         },
     },
 }
+
+log_dir = os.path.join(BASE_DIR, 'logs')
+os.makedirs(log_dir, exist_ok=True)  # Ensures the directory exists

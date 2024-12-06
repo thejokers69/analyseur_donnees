@@ -9,6 +9,11 @@ class UploadedFile(models.Model):
 
 # Analyse History and Results
 class AnalysisHistory(models.Model):
+    STATUS_CHOICES=[
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     file_name = models.CharField(max_length=255)
     upload_date = models.DateTimeField(auto_now_add=True)
@@ -20,6 +25,7 @@ class AnalysisHistory(models.Model):
     data_range = models.CharField(max_length=255, null=True, blank=True)
     file = models.FileField(upload_to='uploads/%Y/%m/%d/')
     histograms = JSONField(null=True, blank=True)
+    status =  models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
 
     def __str__(self):
         return f"Analysis of {self.file_name} by {self.user.username}"
