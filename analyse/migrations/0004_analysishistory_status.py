@@ -6,13 +6,21 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('analyse', '0003_analysishistory_histograms'),
+        ("analyse", "0003_analysishistory_histograms"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='analysishistory',
-            name='status',
-            field=models.CharField(choices=[('pending', 'Pending'), ('completed', 'Completed'), ('failed', 'Failed')], default='pending', max_length=10),
+            model_name="analysishistory",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("pending", "Pending"),
+                    ("completed", "Completed"),
+                    ("failed", "Failed"),
+                ],
+                default="pending",
+                max_length=10,
+            ),
         ),
     ]

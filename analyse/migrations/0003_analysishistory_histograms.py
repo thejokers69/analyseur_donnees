@@ -7,13 +7,13 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('analyse', '0002_analysishistory'),
+        ("analyse", "0002_analysishistory"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='analysishistory',
-            name='histograms',
+            model_name="analysishistory",
+            name="histograms",
             field=jsonfield.fields.JSONField(blank=True, null=True),
         ),
     ]

@@ -1,0 +1,28 @@
+<h2>Analysis Results for {{ file_name }}</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Metric</th>
+      <th>Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for metric, values in results.items %}
+    <tr>
+      <td>{{ metric|capfirst }}</td>
+      <td>
+        {% if values %} {% for key, value in values.items %}
+        <strong>{{ key|capfirst }}:</strong> {{ value }}<br />
+        {% endfor %} {% else %} N/A {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="2">Aucune analyse trouvée.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<a href="{% url 'analysis_history' %}" class="btn btn-secondary"
+  >View Analysis History</a
+>

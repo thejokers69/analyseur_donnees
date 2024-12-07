@@ -8,25 +8,39 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('analyse', '0001_initial'),
+        ("analyse", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='AnalysisHistory',
+            name="AnalysisHistory",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('file_name', models.CharField(max_length=255)),
-                ('upload_date', models.DateTimeField(auto_now_add=True)),
-                ('mean', models.FloatField(blank=True, null=True)),
-                ('median', models.FloatField(blank=True, null=True)),
-                ('mode', models.CharField(blank=True, max_length=255, null=True)),
-                ('variance', models.FloatField(blank=True, null=True)),
-                ('std_dev', models.FloatField(blank=True, null=True)),
-                ('data_range', models.CharField(blank=True, max_length=255, null=True)),
-                ('file', models.FileField(upload_to='uploads/%Y/%m/%d/')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("file_name", models.CharField(max_length=255)),
+                ("upload_date", models.DateTimeField(auto_now_add=True)),
+                ("mean", models.FloatField(blank=True, null=True)),
+                ("median", models.FloatField(blank=True, null=True)),
+                ("mode", models.CharField(blank=True, max_length=255, null=True)),
+                ("variance", models.FloatField(blank=True, null=True)),
+                ("std_dev", models.FloatField(blank=True, null=True)),
+                ("data_range", models.CharField(blank=True, max_length=255, null=True)),
+                ("file", models.FileField(upload_to="uploads/%Y/%m/%d/")),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]

@@ -3,6 +3,7 @@
 import requests
 from django.conf import settings
 
+
 def send_mailgun_email(subject, text, recipient_email):
     return requests.post(
         f"https://api.mailgun.net/v3/{settings.MAILGUN_DOMAIN}/messages",
@@ -12,5 +13,5 @@ def send_mailgun_email(subject, text, recipient_email):
             "to": [recipient_email],
             "subject": subject,
             "text": text,
-        }
+        },
     )
