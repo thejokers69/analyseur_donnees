@@ -1,7 +1,8 @@
-# ANALYSEUR_DONNEES/analyse/admin.py
+# /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/admin.py
 
 from django.contrib import admin
 from .models import UploadedFile, AnalysisHistory
+from datetime import datetime, timedelta
 
 
 @admin.register(UploadedFile)
@@ -22,16 +23,15 @@ class AnalysisHistoryAdmin(admin.ModelAdmin):
 
     actions = ["mark_as_completed", "delete_old_analyses"]
 
-    @admin.action(description="Marquer comme terminées")
+    @admin.action(description="Mark as Completed")
     def mark_as_completed(self, request, queryset):
-        queryset.update(status="completed")
+        updated_count = queryset.update(status="completed")
+        self.message_user(request, f"{updated_count} analyses marked as completed.")
 
-    @admin.action(description="Supprimer les analyses obsolètes")
+    @admin.action(description="Delete Obsolete Analyses")
     def delete_old_analyses(self, request, queryset):
-        from datetime import datetime, timedelta
-
         one_year_ago = datetime.now() - timedelta(days=365)
         old_analyses = queryset.filter(upload_date__lt=one_year_ago)
         count = old_analyses.count()
         old_analyses.delete()
-        self.message_user(request, f"{count} analyses obsolètes supprimées.")
+        self.message_user(request, f"{count} obsolete analyses have been deleted.")

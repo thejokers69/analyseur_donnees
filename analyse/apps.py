@@ -1,4 +1,4 @@
-# ANALYSEUR_DONNEES/analyse/apps.py
+# /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/apps.py
 from django.apps import AppConfig
 
 

@@ -1,4 +1,5 @@
-# ANALYSEUR_DONNEES/analyse/forms.py
+# /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/forms.py
+
 from django import forms
 from django.contrib.auth.models import User
 from .models import UploadedFile
@@ -15,13 +16,13 @@ class EmailUpdateForm(forms.ModelForm):
         model = User
         fields = ["email"]
         labels = {
-            "email": "Adresse email",
+            "email": "Email Address",
         }
 
     def clean_email(self):
         email = self.cleaned_data.get("email")
         if User.objects.filter(email=email).exists():
-            raise forms.ValidationError("Cet email est déjà utilisé.")
+            raise forms.ValidationError("This email is already in use.")
         return email
 
 

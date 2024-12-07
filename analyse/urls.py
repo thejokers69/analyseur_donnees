@@ -1,6 +1,7 @@
-# ANALYSEUR_DONNEES/analyse/urls.py
+# /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/urls.py
 from django.urls import path
 from . import views
+from analyse import views as analyse_views
 
 urlpatterns = [
     path("", views.home, name="home"),

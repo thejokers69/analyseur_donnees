@@ -1,24 +1,52 @@
-{% load static %}
+{% comment %} /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/templates/visualization_result.html {% endcomment %}
+{% load custom_filters %}
+{% load static %} 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Visualization Result</title>
+    <title>Résultat de la Visualisation</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'custom.css' %}">
 </head>
 <body>
-<div class="container mt-5">
-    <h2 class="mb-4">Visualization Result</h2>
-    {% if plot_base64 %}
-    <div class="text-center">
-        <img src="data:image/png;base64,{{ plot_base64 }}" class="img-fluid" alt="Visualization">
+    <div class="container mt-5">
+        <div class="card shadow">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Résultat de la Visualisation</h2>
+
+                <!-- Affichage des Messages -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                {% if plot_base64 %}
+                    <div class="text-center">
+                        <img src="data:image/png;base64,{{ plot_base64 }}" class="img-fluid" alt="Visualisation">
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning text-center" role="alert">
+                        Aucune visualisation disponible.
+                    </div>
+                {% endif %}
+
+                <!-- Boutons de Navigation -->
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'visualization_options' %}" class="btn btn-secondary">Retour aux Options</a>
+                    <a href="{% url 'home' %}" class="btn btn-primary">Retour à l'Accueil</a>
+                </div>
+            </div>
+        </div>
     </div>
-    {% else %}
-    <p>No visualization available.</p>
-    {% endif %}
-    <div class="text-center mt-4">
-        <a href="{% url 'home' %}" class="btn btn-secondary">Return to Home</a>
-    </div>
-</div>
+
+    <!-- Bootstrap JS Bundle avec Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

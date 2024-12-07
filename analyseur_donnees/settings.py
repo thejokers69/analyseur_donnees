@@ -1,4 +1,4 @@
-# ANALYSEUR_DONNEES/analyseur_données/settings.py
+# /Users/thejoker/Documents/GitHub/analyseur_donnees/analyseur_donnees/settings.py
 
 """
 Django settings for analyseur_donnees project.
