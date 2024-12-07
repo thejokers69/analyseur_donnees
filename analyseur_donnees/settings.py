@@ -155,10 +155,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Redirige les utilisateurs vers la page de profil après la connexion
-LOGIN_REDIRECT_URL = "/profile/"
-
-LOGOUT_REDIRECT_URL = "/"
-
+LOGIN_REDIRECT_URL = 'analyse:home'
+LOGOUT_REDIRECT_URL = "analyse:home"
+LOGIN_URL = 'analyse:login'  # Ensure this matches your URL configuration
 # settings.py
 
 MAILGUN_API_KEY = "60a556009ab4e1544a985f7af99f50a9-72e4a3d5-bf923431"  # Replace with your actual Mailgun API key
@@ -199,6 +198,3 @@ os.makedirs(log_dir, exist_ok=True)  # Ensures the directory exists
 
 
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
-
-LOGIN_URL = "/login/"  # Ensure this matches your URL configuration
-LOGIN_REDIRECT_URL = "/profile/"  # Redirect after login

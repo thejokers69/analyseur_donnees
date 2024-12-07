@@ -2,10 +2,13 @@
 from django.urls import path
 from . import views
 from analyse import views as analyse_views
+from django.contrib.auth import views as auth_views
 
+app_name = "analyse"
 urlpatterns = [
     path("", views.home, name="home"),
-    path("register", views.register, name="register"),
+    path("register/", views.register, name="register"),
+    path("login/", views.custom_login, name="login"),
     path("upload/", views.upload_file, name="upload"),
     path("results/<int:file_id>", views.results, name="results"),
     path("profile/", views.profile, name="profile"),
@@ -28,4 +31,5 @@ urlpatterns = [
         views.customize_analysis,
         name="customize_analysis",
     ),
+    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
 ]

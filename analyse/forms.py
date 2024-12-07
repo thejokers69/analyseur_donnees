@@ -11,6 +11,14 @@ class UploadFileForm(forms.ModelForm):
         fields = ["file"]
 
 
+class CustomizationForm(forms.Form):
+    parameter = forms.CharField(
+        label="Parameter",
+        max_length=100,
+        widget=forms.TextInput(attrs={"placeholder": "Enter parameter"}),
+    )
+
+
 class EmailUpdateForm(forms.ModelForm):
     class Meta:
         model = User

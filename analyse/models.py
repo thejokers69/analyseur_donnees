@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 # Upload files
 class UploadedFile(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     file = models.FileField(upload_to="uploads/")
     uploaded_at = models.DateTimeField(auto_now_add=True)
 

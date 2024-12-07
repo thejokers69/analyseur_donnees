@@ -1,5 +1,5 @@
-{% comment %} /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/templates/login.html {% endcomment %}
-{% load custom_filters %}
+<!-- /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/templates/login.html -->
+{% load widget_tweaks %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="fr">
@@ -28,7 +28,7 @@
                 {% csrf_token %}
                 <div class="mb-3">
                     {{ form.username.label_tag }}
-                    {{ form.username|add_class:"form-control" }}
+                    {% render_field form.username class="form-control" %}
                     {% if form.username.errors %}
                         <div class="text-danger">
                             {% for error in form.username.errors %}
@@ -39,7 +39,7 @@
                 </div>
                 <div class="mb-3">
                     {{ form.password.label_tag }}
-                    {{ form.password|add_class:"form-control" }}
+                    {% render_field form.password class="form-control" %}
                     {% if form.password.errors %}
                         <div class="text-danger">
                             {% for error in form.password.errors %}
@@ -52,7 +52,7 @@
             </form>
             <p class="mt-3 text-center">
                 Vous n'avez pas de compte ?
-                <a href="{% url 'register' %}">Inscrivez-vous ici.</a>
+                <a href="{% url 'analyse:register' %}">Inscrivez-vous ici.</a>
             </p>
         </div>
     </div>

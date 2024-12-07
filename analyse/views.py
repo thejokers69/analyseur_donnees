@@ -13,7 +13,7 @@ from .forms import EmailUpdateForm, UploadFileForm, AnalysisCustomizationForm
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import UploadedFile, AnalysisHistory
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 import os
@@ -27,26 +27,24 @@ from .utils import send_mailgun_email
 
 def custom_login(request):
     if request.method == "POST":
-        username = request.POST.get("username", None)
-        password = request.POST.get("password", None)
-        if not username or not password:
-            messages.error(request, "Please enter both username and password.")
-            return render(request, "login.html")
-        user = authenticate(request, username=username, password=password)
-        if user:
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
             login(request, user)
             messages.success(request, "Logged in successfully.")
             return redirect("analyse:home")
         else:
             messages.error(request, "Invalid username or password.")
-    return render(request, "login.html")
+    else:
+        form = AuthenticationForm()
+    return render(request, "login.html", {"form": form})
 
 
 # Homepage
 def home(request):
     uploaded_files = None
     if request.user.is_authenticated:
-        uploaded_files = UploadedFile.objects.all()
+        uploaded_files = UploadedFile.objects.filter(user=request.user)
     return render(request, "home.html", {"uploaded_files": uploaded_files})
 
 
@@ -68,16 +66,28 @@ def register(request):
 
 
 # Profile Registration
+@login_required
 def profile(request):
+    form = EmailUpdateForm(instance=request.user)
     if request.method == "POST":
         form = EmailUpdateForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, "Your email address has been updated.")
-            return redirect("analyse:profile")
-    else:
-        form = EmailUpdateForm(instance=request.user)
+            messages.success(request, "Votre adresse e-mail a été mise à jour.")
+            return redirect("profile")
     return render(request, "profile.html", {"form": form})
+
+
+# def profile(request):
+#     if request.method == "POST":
+#         form = EmailUpdateForm(request.POST, instance=request.user)
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request, "Your email address has been updated.")
+#             return redirect("analyse:profile")
+#     else:
+#         form = EmailUpdateForm(instance=request.user)
+#     return render(request, "profile.html", {"form": form})
 
 
 # Generate Histograms for each column
@@ -97,7 +107,6 @@ def generate_histogram(df, column_name):
 @login_required
 def upload_file(request):
     customization_form = None
-
     if request.method == "POST":
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -114,11 +123,7 @@ def upload_file(request):
                     "Unsupported file format. Please upload an Excel or CSV file.",
                 )
                 return redirect("analyse:upload")
-
-            customization_form = AnalysisCustomizationForm(
-                columns=df.columns
-            )
-
+            customization_form = AnalysisCustomizationForm(columns=df.columns)
             if customization_form.is_valid():
                 selected_columns = customization_form.cleaned_data["columns"]
                 selected_stats = {
@@ -133,7 +138,9 @@ def upload_file(request):
 
                 stats_results = {}
                 if selected_stats["mean"]:
-                    stats_results["mean"] = df.select_dtypes(include="number").mean().to_dict()
+                    stats_results["mean"] = (
+                        df.select_dtypes(include="number").mean().to_dict()
+                    )
                 if selected_stats["median"]:
                     stats_results["median"] = df.median().to_dict()
                 if selected_stats["mode"]:
@@ -155,9 +162,13 @@ def upload_file(request):
                 )
                 analysis.save()
 
-                send_analysis_completed_email(request.user.email, uploaded_file.file.name)
+                send_analysis_completed_email(
+                    request.user.email, uploaded_file.file.name
+                )
 
-                messages.success(request, f"Analysis of {uploaded_file.file.name} completed.")
+                messages.success(
+                    request, f"Analysis of {uploaded_file.file.name} completed."
+                )
                 return redirect("analyse:analysis_history")
     else:
         form = UploadFileForm()
@@ -200,7 +211,9 @@ def results(request, file_id):
 # Analysis History
 @login_required
 def analysis_history(request):
-    user_analyses = AnalysisHistory.objects.filter(user=request.user).order_by("-upload_date")
+    user_analyses = AnalysisHistory.objects.filter(user=request.user).order_by(
+        "-upload_date"
+    )
     return render(request, "analysis_history.html", {"user_analyses": user_analyses})
 
 
@@ -210,7 +223,9 @@ def download_csv(request, analysis_id):
     analysis = get_object_or_404(AnalysisHistory, id=analysis_id, user=request.user)
 
     response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = f'attachment; filename="{analysis.file_name}_analysis.csv"'
+    response["Content-Disposition"] = (
+        f'attachment; filename="{analysis.file_name}_analysis.csv"'
+    )
 
     writer = csv.writer(response)
     writer.writerow(["Metric", "Value"])  # Header row
@@ -230,7 +245,9 @@ def download_pdf(request, analysis_id):
     analysis = get_object_or_404(AnalysisHistory, id=analysis_id, user=request.user)
 
     response = HttpResponse(content_type="application/pdf")
-    response["Content-Disposition"] = f'attachment; filename="{analysis.file_name}_analysis.pdf"'
+    response["Content-Disposition"] = (
+        f'attachment; filename="{analysis.file_name}_analysis.pdf"'
+    )
 
     pdf = canvas.Canvas(response, pagesize=A4)
     pdf.setTitle(f"Analysis Report - {analysis.file_name}")
@@ -337,20 +354,17 @@ def correlation_analysis(request, file_id):
                 reg_plots.append(
                     (f"Correlation between {col1} and {col2}", plot_base64)
                 )
-            context = {
-                "heatmap_base64": heatmap_base64,  # Your heatmap data
-                "reg_plots": reg_plots,  # Your regression plots
-                "file_id": file_id,  # Pass file_id to the template
-            }
+    context = {
+        "correlation_matrix": correlation_matrix.to_html(classes="table table-striped"),
+        "heatmap_base64": heatmap_base64,
+        "reg_plots": reg_plots,
+        "file_id": file_id,
+    }
 
     return render(
         request,
         "correlation_analysis.html",
-        {
-            "correlation_matrix": correlation_matrix.to_html(classes="table table-striped"),
-            "heatmap_base64": heatmap_base64,
-            "reg_plots": reg_plots,
-        },
+        context,  # Use the updated context
     )
 
 
@@ -450,12 +464,16 @@ def visualization_options(request, file_id):
                 buffer.close()
 
         return render(
-            request, "visualization_result.html", {"plot_base64": plot_base64}
+            request,
+            "visualization_result.html",
+            {"plot_base64": plot_base64, "file_id": file_id},  # Pass file_id here
         )
 
     # Render the visualization options form
     return render(
-        request, "visualization_options.html", {"uploaded_file": uploaded_file, "numeric_columns": numeric_columns}
+        request,
+        "visualization_options.html",
+        {"uploaded_file": uploaded_file, "numeric_columns": numeric_columns},
     )
 
 

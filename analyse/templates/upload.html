@@ -1,5 +1,5 @@
-{% comment %} /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/templates/upload.html {% endcomment %}
-{% load custom_filters %}
+<!-- /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/templates/upload.html -->
+{% load widget_tweaks %}
 {% load static %} 
 <!DOCTYPE html>
 <html lang="fr">
@@ -41,7 +41,7 @@
                             </div>
                         {% endif %}
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">Télécharger</button>
+                    <button type="submit" name="upload_submit" class="btn btn-primary w-100">Télécharger</button>
                 </form>
                 
                 <!-- Formulaire de Personnalisation de l'Analyse -->
@@ -60,14 +60,14 @@
                                 </div>
                             {% endif %}
                         </div>
-                        <button type="submit" class="btn btn-success w-100">Lancer l'analyse</button>
+                        <button type="submit" name="customize_submit" class="btn btn-success w-100">Lancer l'analyse</button>
                     </form>
                 {% endif %}
                 
                 <!-- Boutons de Navigation -->
                 <div class="d-flex justify-content-between mt-5">
-                    <a href="{% url 'upload' %}" class="btn btn-secondary me-2">Retour au téléchargement</a>
-                    <a href="{% url 'home' %}" class="btn btn-primary">Retour à l'accueil</a>
+                    <a href="{% url 'analyse:upload' %}" class="btn btn-secondary me-2">Retour au téléchargement</a>
+                    <a href="{% url 'analyse:home' %}" class="btn btn-primary">Retour à l'accueil</a>
                 </div>
             </div>
         </div>
