@@ -32,6 +32,7 @@ SECRET_KEY = 'django-insecure-)uvn62c=-v64jw=51*_^ykh-($jr2$&je)k(t94bejdg(8@=gq
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
 DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost').split(',')
 ALLOWED_HOSTS = []
@@ -68,6 +69,7 @@ TEMPLATES = [
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
+            'debug': True,
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
@@ -79,7 +81,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'analyseur_donnees.wsgi.application'
-
+# Caches configurations
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
@@ -164,7 +172,7 @@ LOGGING = {
         'file': {
             'level': 'ERROR',
             'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs/error.log',
+            'filename': os.path.join(BASE_DIR,'logs/error.log'),
             'formatter':'verbose',
         },
     },
@@ -185,3 +193,9 @@ LOGGING = {
 
 log_dir = os.path.join(BASE_DIR, 'logs')
 os.makedirs(log_dir, exist_ok=True)  # Ensures the directory exists
+
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+LOGIN_URL = '/login/'  # Ensure this matches your URL configuration
+LOGIN_REDIRECT_URL = '/profile/'  # Redirect after login

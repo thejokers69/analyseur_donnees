@@ -1,0 +1,37 @@
+{% comment %} /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/templates/visualisation_option.html {% endcomment %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Visualization Options</title>
+    <link rel="stylesheet" href="{% static 'custom.css' %}">
+</head>
+<body>
+<div class="container mt-5">
+    <h2 class="mb-4">Visualization Options</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="columns" class="form-label">Select Columns</label>
+            <select name="columns" id="columns" multiple class="form-select">
+                {% for col in columns %}
+                <option value="{{ col }}">{{ col }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="visualization" class="form-label">Choose Visualization Type</label>
+            <select name="visualization" id="visualization" class="form-select">
+                <option value="histogram">Histogram</option>
+                <option value="correlation_heatmap">Correlation Heatmap</option>
+                <option value="scatter">Scatter Plot</option>
+                <option value="boxplot">Box Plot</option>
+                <option value="barchart">Bar Chart</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Generate Visualization</button>
+    </form>
+</div>
+</body>
+</html>

@@ -13,4 +13,5 @@ urlpatterns = [
     path('download_pdf/<int:analysis_id>/', views.download_pdf, name='download_pdf'),
     path('data_table/<int:file_id>/', views.data_table_view, name='data_table'),
     path('correlation_analysis/<int:file_id>/', views.correlation_analysis, name='correlation_analysis'),
+    path('visualization/<int:file_id>/', views.visualization_options, name='visualization_options'),
 ]

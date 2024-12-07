@@ -14,7 +14,7 @@ from django.shortcuts import render, redirect,get_object_or_404
 from .forms import UploadFileForm
 from .models import UploadedFile
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 import os 
 from .models import AnalysisHistory
@@ -27,13 +27,34 @@ from django.http import HttpResponse
 from django.core.mail import send_mail
 from django.conf import settings
 from .utils import send_mailgun_email
+from django.urls import reverse
 
-
+def custom_login(request):
+    if request.method == 'POST':
+        username = request.POST['username', None]
+        password = request.POST['password', None]
+        if not username or not password:
+            messages.error(request, 'Please enter both username and password')
+            return render(request, 'login.html')
+        user = authenticate(request, username=username, password=password)
+        if user:
+            login(request, user)
+            messages.success(request, 'Logged in successfully.')
+            return redirect('home') 
+        else:
+            messages.error(request, 'Invalid username or password')
+    return render(request, 'login.html')
 
 #Homepage
-def home(request):
-    return render(request, 'home.html')
+from analyse.models import UploadedFile
 
+def home(request):
+    uploaded_file = None
+    if request.user.is_authenticated:
+        # Fetch the most recent uploaded file for the logged-in user
+        uploaded_file = UploadedFile.objects.all()
+
+    return render(request, 'home.html', {'uploaded_file': uploaded_file})
 #Register
 def register(request):
     if request.method == 'POST':
@@ -41,10 +62,16 @@ def register(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
+            messages.success(request, 'Registration successful. You can now log in.')
             return redirect('home')
+        else:
+            print("Registration errors:", form.errors)
+            messages.error(request, "Registration failed.Please chec the form ")
+            
     else:
         form = UserCreationForm()
     return render(request, 'register.html', {'form': form})
+
 #Profile Registration
 def profile(request):
     if request.method == 'POST':
@@ -70,8 +97,6 @@ def generate_histogram(df, column_name):
     return file_path
 
 #Upload file
-# ANALYSEUR_DONNEES/analyse/views.py
-
 @login_required
 def upload_file(request):
     customization_form = None
@@ -311,3 +336,84 @@ def correlation_analysis(request, file_id):
         'heatmap_base64': heatmap_base64,
         'reg_plots': reg_plots,
     })
+
+@login_required
+def visualization_options(request, file_id):
+    # Get the uploaded file and read it
+    uploaded_file = get_object_or_404(UploadedFile, id=file_id)
+    file_path = uploaded_file.file.path
+
+    if file_path.endswith('.csv'):
+        df = pd.read_csv(file_path)
+    elif file_path.endswith(('.xls', '.xlsx')):
+        df = pd.read_excel(file_path, engine='openpyxl')
+    else:
+        messages.error(request, "Unsupported file format")
+        return redirect('upload')
+
+    # Handle POST request for visualizations
+    if request.method == 'POST':
+        selected_columns = request.POST.getlist('columns')
+        visualization_type = request.POST.get('visualization')
+
+        # Filter DataFrame based on selected columns
+        df = df[selected_columns]
+
+        # Generate visualization
+        plot_base64 = None
+        if visualization_type == 'histogram':
+            for col in selected_columns:
+                plt.figure()
+                sns.histplot(df[col], kde=True)
+                plt.title(f"Histogram of {col}")
+                buffer = BytesIO()
+                plt.savefig(buffer, format="png")
+                buffer.seek(0)
+                plot_base64 = base64.b64encode(buffer.getvalue()).decode()
+                buffer.close()
+        elif visualization_type == 'correlation_heatmap':
+            correlation_matrix = df.corr()
+            plt.figure(figsize=(10, 8))
+            sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", vmin=-1, vmax=1)
+            buffer = BytesIO()
+            plt.savefig(buffer, format="png")
+            buffer.seek(0)
+            plot_base64 = base64.b64encode(buffer.getvalue()).decode()
+            buffer.close()
+        elif visualization_type == 'scatter':
+            if len(selected_columns) == 2:
+                plt.figure()
+                sns.scatterplot(x=selected_columns[0], y=selected_columns[1], data=df)
+                plt.title(f"Scatter Plot: {selected_columns[0]} vs {selected_columns[1]}")
+                buffer = BytesIO()
+                plt.savefig(buffer, format="png")
+                buffer.seek(0)
+                plot_base64 = base64.b64encode(buffer.getvalue()).decode()
+                buffer.close()
+            else:
+                messages.error(request, "Scatter plots require exactly two columns.")
+        elif visualization_type == 'boxplot':
+            for col in selected_columns:
+                plt.figure()
+                sns.boxplot(data=df[col])
+                plt.title(f"Box Plot of {col}")
+                buffer = BytesIO()
+                plt.savefig(buffer, format="png")
+                buffer.seek(0)
+                plot_base64 = base64.b64encode(buffer.getvalue()).decode()
+                buffer.close()
+        elif visualization_type == 'barchart':
+            for col in selected_columns:
+                plt.figure()
+                df[col].value_counts().plot(kind='bar')
+                plt.title(f"Bar Chart of {col}")
+                buffer = BytesIO()
+                plt.savefig(buffer, format="png")
+                buffer.seek(0)
+                plot_base64 = base64.b64encode(buffer.getvalue()).decode()
+                buffer.close()
+
+        return render(request, 'visualization_result.html', {'plot_base64': plot_base64})
+
+    # Render the visualization options form
+    return render(request, 'visualization_options.html', {'uploaded_file': uploaded_file})

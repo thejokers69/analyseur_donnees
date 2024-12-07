@@ -1,0 +1,24 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Visualization Result</title>
+    <link rel="stylesheet" href="{% static 'custom.css' %}">
+</head>
+<body>
+<div class="container mt-5">
+    <h2 class="mb-4">Visualization Result</h2>
+    {% if plot_base64 %}
+    <div class="text-center">
+        <img src="data:image/png;base64,{{ plot_base64 }}" class="img-fluid" alt="Visualization">
+    </div>
+    {% else %}
+    <p>No visualization available.</p>
+    {% endif %}
+    <div class="text-center mt-4">
+        <a href="{% url 'home' %}" class="btn btn-secondary">Return to Home</a>
+    </div>
+</div>
+</body>
+</html>
