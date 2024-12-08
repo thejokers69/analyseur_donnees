@@ -3,6 +3,7 @@
 *.log
 *.pot
 *.pyc
+*.mo
 __pycache__/
 db.sqlite3
 media/
@@ -12,7 +13,7 @@ uploads/
 .env
 env/
 venv/
-.env
+
 .DS_Store
 
 # Static files
@@ -23,6 +24,7 @@ staticfiles/
 *.js.map
 
 # IDE and editor settings
+*.sublime-*
 .idea/
 .vscode/
 *.swp
