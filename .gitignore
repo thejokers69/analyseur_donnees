@@ -9,7 +9,11 @@ db.sqlite3
 media/
 uploads/
 __pycache__/
+
+# Exclude dump files
+*.dump
 # Environment
+
 .env
 env/
 venv/
@@ -25,7 +29,6 @@ staticfiles/
 *.js.map
 
 # IDE and editor settings
-*.sublime-*
 .idea/
 .vscode/
 *.sublime-*
@@ -75,6 +78,10 @@ Thumbs.db
 *.egg
 pytestdebug.log
 *
+<<<<<<< HEAD
 analyse/migrations/
 
 
+=======
+analyse/migrations/
+>>>>>>> 00ac6e5 (Update .gitignore and remove unnecessary files)
