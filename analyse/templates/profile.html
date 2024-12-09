@@ -51,7 +51,7 @@
                 <!-- Actions supplémentaires -->
                 <div class="d-flex justify-content-between align-items-center mt-4">
                     <!-- Formulaire de Déconnexion -->
-                    <form action="{% url 'logout' %}" method="post" class="mb-0">
+                    <form action="{% url 'analyse:logout' %}" method="post" class="mb-0">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger">Déconnexion</button>
                     </form>

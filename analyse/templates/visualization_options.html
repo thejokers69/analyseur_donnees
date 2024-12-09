@@ -1,19 +1,19 @@
-{% comment %} /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/templates/visualisation_option.html {% endcomment %}
+<!-- /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/templates/visualization_options.html -->
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Visualization Options</title>
+    <title>Options de Visualisation</title>
     <link rel="stylesheet" href="{% static 'custom.css' %}">
 </head>
 <body>
 <div class="container mt-5">
-    <h2 class="mb-4">Visualization Options</h2>
-    <form method="post" enctype="multipart/form-data">
+    <h2 class="mb-4">Options de Visualisation</h2>
+    <form method="post">
         {% csrf_token %}
         <div class="mb-3">
-            <label for="columns" class="form-label">Select Columns</label>
+            <label for="columns" class="form-label">Sélectionner les Colonnes</label>
             <select name="columns" id="columns" multiple class="form-select">
                 {% for col in columns %}
                 <option value="{{ col }}">{{ col }}</option>
@@ -21,16 +21,16 @@
             </select>
         </div>
         <div class="mb-3">
-            <label for="visualization" class="form-label">Choose Visualization Type</label>
+            <label for="visualization" class="form-label">Type de Visualisation</label>
             <select name="visualization" id="visualization" class="form-select">
-                <option value="histogram">Histogram</option>
-                <option value="correlation_heatmap">Correlation Heatmap</option>
-                <option value="scatter">Scatter Plot</option>
+                <option value="histogram">Histogramme</option>
+                <option value="correlation_heatmap">Heatmap de Corrélation</option>
+                <option value="scatter">Graphique de Dispersion</option>
                 <option value="boxplot">Box Plot</option>
-                <option value="barchart">Bar Chart</option>
+                <option value="barchart">Diagramme en Barres</option>
             </select>
         </div>
-        <button type="submit" class="btn btn-primary">Generate Visualization</button>
+        <button type="submit" class="btn btn-primary">Générer la Visualisation</button>
     </form>
 </div>
 </body>

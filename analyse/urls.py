@@ -6,6 +6,7 @@ from django.contrib.auth import views as auth_views
 
 app_name = "analyse"
 urlpatterns = [
+    path('some-view/', views.some_view, name='some_view' ),
     path("", views.home, name="home"),
     path("register/", views.register, name="register"),
     path("login/", views.custom_login, name="login"),

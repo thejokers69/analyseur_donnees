@@ -41,6 +41,7 @@
                             </div>
                         {% endif %}
                     </div>
+                    {% csrf_token %}
                     <button type="submit" name="upload_submit" class="btn btn-primary w-100">Télécharger</button>
                 </form>
                 
@@ -60,6 +61,7 @@
                                 </div>
                             {% endif %}
                         </div>
+                        {% csrf_token %}
                         <button type="submit" name="customize_submit" class="btn btn-success w-100">Lancer l'analyse</button>
                     </form>
                 {% endif %}

@@ -23,8 +23,14 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from django.conf import settings
 from .utils import send_mailgun_email
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.core.mail import send_mail
+from .utils import load_data
+import logging
 
-
+logger = logging.getLogger(__name__)
+# Custom login views
 def custom_login(request):
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
@@ -40,7 +46,8 @@ def custom_login(request):
     return render(request, "login.html", {"form": form})
 
 
-# Homepage
+# Homepage view
+@login_required
 def home(request):
     uploaded_files = None
     if request.user.is_authenticated:
@@ -48,7 +55,7 @@ def home(request):
     return render(request, "home.html", {"uploaded_files": uploaded_files})
 
 
-# Register
+# Register view
 def register(request):
     if request.method == "POST":
         form = UserCreationForm(request.POST)
@@ -65,7 +72,7 @@ def register(request):
     return render(request, "register.html", {"form": form})
 
 
-# Profile Registration
+# Profile view
 @login_required
 def profile(request):
     form = EmailUpdateForm(instance=request.user)
@@ -77,19 +84,39 @@ def profile(request):
             return redirect("profile")
     return render(request, "profile.html", {"form": form})
 
+# # Utility function to load data
+# def load_data(file_path):
+#     file_extension = os.path.splitext(file_path)[1].lower()
+#     try:
+#         if file_extension in [".xls", ".xlsx"]:
+#             return pd.read_excel(file_path, engine="openpyxl")
+#         elif file_extension == ".csv":
+#             return pd.read_csv(file_path)
+#         else:
+#             raise ValueError("Unsupported file format.")
+#     except Exception as e:
+#         raise ValueError(f"Error loading file: {e}")
 
-# def profile(request):
-#     if request.method == "POST":
-#         form = EmailUpdateForm(request.POST, instance=request.user)
-#         if form.is_valid():
-#             form.save()
-#             messages.success(request, "Your email address has been updated.")
-#             return redirect("analyse:profile")
-#     else:
-#         form = EmailUpdateForm(instance=request.user)
-#     return render(request, "profile.html", {"form": form})
-
-
+#  Vue Générique Exemple : some_view
+@login_required
+def some_view(request):
+    # Remplacez `some_id` par la logique appropriée pour obtenir l'ID du fichier
+    some_id = request.GET.get('file_id')  # Exemple de récupération via GET
+    if not some_id:
+        messages.error(request, "Aucun ID de fichier fourni.")
+        return redirect("analyse:home")
+    
+    try:
+        file = UploadedFile.objects.get(id=some_id, user=request.user)
+    except UploadedFile.DoesNotExist:
+        messages.error(request, "Fichier non trouvé.")
+        return redirect("analyse:home")
+    
+    context = {
+        'file_id': file.id,
+        # Ajoutez d'autres variables de contexte si nécessaire
+    }
+    return render(request, 'template.html', context)
 # Generate Histograms for each column
 def generate_histogram(df, column_name):
     plt.figure()
@@ -103,81 +130,106 @@ def generate_histogram(df, column_name):
     return file_path
 
 
-# Upload file
+# Upload file view
 @login_required
 def upload_file(request):
     customization_form = None
     if request.method == "POST":
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            uploaded_file = form.save()
-            file_extension = os.path.splitext(uploaded_file.file.name)[1].lower()
+        if "upload_submit" in request.POST:  # File upload form submitted
+            form = UploadFileForm(request.POST, request.FILES)
+            if form.is_valid():
+                uploaded_file = form.save()
+                file_extension = os.path.splitext(uploaded_file.file.name)[1].lower()
 
-            if file_extension in [".xls", ".xlsx"]:
-                df = pd.read_excel(uploaded_file.file.path, engine="openpyxl")
-            elif file_extension == ".csv":
-                df = pd.read_csv(uploaded_file.file.path)
-            else:
-                messages.error(
-                    request,
-                    "Unsupported file format. Please upload an Excel or CSV file.",
-                )
+                # Handle file upload and validate
+                try:
+                    if file_extension in [".xls", ".xlsx"]:
+                        df = pd.read_excel(uploaded_file.file.path, engine="openpyxl")
+                    elif file_extension == ".csv":
+                        df = pd.read_csv(uploaded_file.file.path)
+                    else:
+                        raise ValueError("Unsupported file format.")
+
+                    # Store columns in session for customization form
+                    request.session["uploaded_file_id"] = uploaded_file.id
+                    request.session["columns"] = df.columns.tolist()
+                    customization_form = AnalysisCustomizationForm(columns=df.columns)
+                except Exception as e:
+                    messages.error(request, f"Error processing file: {str(e)}")
+                    return redirect("analyse:upload")
+
+        elif "customize_submit" in request.POST:  # Customization form submitted
+            # Retrieve uploaded file and columns from session
+            file_id = request.session.get("uploaded_file_id")
+            if not file_id:
+                messages.error(request, "No file uploaded for analysis.")
                 return redirect("analyse:upload")
-            customization_form = AnalysisCustomizationForm(columns=df.columns)
-            if customization_form.is_valid():
-                selected_columns = customization_form.cleaned_data["columns"]
-                selected_stats = {
-                    "mean": customization_form.cleaned_data["mean"],
-                    "median": customization_form.cleaned_data["median"],
-                    "mode": customization_form.cleaned_data["mode"],
-                    "variance": customization_form.cleaned_data["variance"],
-                    "std_dev": customization_form.cleaned_data["std_dev"],
-                }
 
-                df = df[selected_columns]
+            uploaded_file = UploadedFile.objects.get(id=file_id)
+            file_path = uploaded_file.file.path
+            columns = request.session.get("columns", [])
+            
+            try:
+                if file_path.endswith(".csv"):
+                    df = pd.read_csv(file_path)
+                elif file_path.endswith((".xls", ".xlsx")):
+                    df = pd.read_excel(file_path, engine="openpyxl")
+                else:
+                    raise ValueError("Unsupported file format.")
 
-                stats_results = {}
-                if selected_stats["mean"]:
-                    stats_results["mean"] = (
-                        df.select_dtypes(include="number").mean().to_dict()
+                customization_form = AnalysisCustomizationForm(request.POST, columns=columns)
+                if customization_form.is_valid():
+                    selected_columns = customization_form.cleaned_data["columns"]
+                    selected_stats = {
+                        "mean": customization_form.cleaned_data["mean"],
+                        "median": customization_form.cleaned_data["median"],
+                        "mode": customization_form.cleaned_data["mode"],
+                        "variance": customization_form.cleaned_data["variance"],
+                        "std_dev": customization_form.cleaned_data["std_dev"],
+                    }
+
+                    df = df[selected_columns]
+                    stats_results = {}
+                    if selected_stats["mean"]:
+                        stats_results["mean"] = df.select_dtypes(include="number").mean().to_dict()
+                    if selected_stats["median"]:
+                        stats_results["median"] = df.median().to_dict()
+                    if selected_stats["mode"]:
+                        stats_results["mode"] = df.mode().iloc[0].to_dict()
+                    if selected_stats["variance"]:
+                        stats_results["variance"] = df.var().to_dict()
+                    if selected_stats["std_dev"]:
+                        stats_results["std_dev"] = df.std().to_dict()
+
+                    # Save analysis results
+                    analysis = AnalysisHistory(
+                        user=request.user,
+                        file_name=uploaded_file.file.name,
+                        uploaded_file=uploaded_file,
+                        mean=stats_results.get("mean"),
+                        median=stats_results.get("median"),
+                        mode=stats_results.get("mode"),
+                        variance=stats_results.get("variance"),
+                        std_dev=stats_results.get("std_dev"),
                     )
-                if selected_stats["median"]:
-                    stats_results["median"] = df.median().to_dict()
-                if selected_stats["mode"]:
-                    stats_results["mode"] = df.mode().iloc[0].to_dict()
-                if selected_stats["variance"]:
-                    stats_results["variance"] = df.var().to_dict()
-                if selected_stats["std_dev"]:
-                    stats_results["std_dev"] = df.std().to_dict()
+                    analysis.save()
 
-                analysis = AnalysisHistory(
-                    user=request.user,
-                    file_name=uploaded_file.file.name,
-                    uploaded_file=uploaded_file,
-                    mean=stats_results.get("mean"),
-                    median=stats_results.get("median"),
-                    mode=stats_results.get("mode"),
-                    variance=stats_results.get("variance"),
-                    std_dev=stats_results.get("std_dev"),
-                )
-                analysis.save()
-
-                send_analysis_completed_email(
-                    request.user.email, uploaded_file.file.name
-                )
-
-                messages.success(
-                    request, f"Analysis of {uploaded_file.file.name} completed."
-                )
-                return redirect("analyse:analysis_history")
+                    send_analysis_completed_email(request.user.email, uploaded_file.file.name)
+                    messages.success(request, f"Analysis of {uploaded_file.file.name} completed.")
+                    return redirect("analyse:analysis_history")
+            except Exception as e:
+                messages.error(request, f"Error during analysis: {str(e)}")
+                return redirect("analyse:upload")
     else:
         form = UploadFileForm()
+
     return render(
-        request, "upload.html", {"form": form, "customization_form": customization_form}
+        request,
+        "upload.html",
+        {"form": form, "customization_form": customization_form},
     )
 
-
-# Results
+# Results view
 def results(request, file_id):
     uploaded_file = get_object_or_404(UploadedFile, id=file_id)
     file_path = uploaded_file.file.path
@@ -208,7 +260,7 @@ def results(request, file_id):
     return render(request, "results.html", context)
 
 
-# Analysis History
+# Analysis History view
 @login_required
 def analysis_history(request):
     user_analyses = AnalysisHistory.objects.filter(user=request.user).order_by(
@@ -283,14 +335,29 @@ def download_pdf(request, analysis_id):
 
 # Notifications by email address and password
 def send_analysis_completed_email(recipient_email, file_name):
-    subject = "Analysis Completed"
-    message = f"Your analysis for {file_name} is complete. You can download the results from your dashboard."
-    email_from = settings.EMAIL_HOST_USER
+    subject = "Analyse Terminée"
+    message = f"Votre analyse pour {file_name} est terminée. Vous pouvez télécharger les résultats depuis votre tableau de bord."
+    email_from = settings.DEFAULT_FROM_EMAIL
     recipient_list = [recipient_email]
+    
+    logger.debug(f"EMAIL_FROM: {email_from}")
+    logger.debug(f"RECIPIENT_LIST: {recipient_list}")
 
-    send_mail(subject, message, email_from, recipient_list)
-    send_mailgun_email(subject, message, recipient_email)
+    if not email_from or not recipient_list:
+        logger.error("Email configuration is not properly set.")
+        raise ValueError("Email configuration is not properly set.")
 
+    try:
+        # Envoi via SMTP
+        send_mail(subject, message, email_from, recipient_list)
+        logger.info(f"Email envoyé via SMTP à {recipient_email}")
+
+        # Envoi via Mailgun (optionnel)
+        send_mailgun_email(subject, message, recipient_email)
+        logger.info(f"Email envoyé via Mailgun à {recipient_email}")
+    except Exception as e:
+        logger.error(f"Erreur lors de l'envoi de l'email: {e}")
+        raise
 
 # Data table
 @login_required
@@ -364,14 +431,15 @@ def correlation_analysis(request, file_id):
     return render(
         request,
         "correlation_analysis.html",
-        context,  # Use the updated context
+        context,
     )
 
 
 @login_required
 def visualization_options(request, file_id):
-    uploaded_file = get_object_or_404(UploadedFile, id=file_id)
-    file_path = uploaded_file.file.path
+    uploaded_file = get_object_or_404(UploadedFile, id=file_id, user=request.user)
+    file_path=uploaded_file.file.path
+    df = load_data(file_path)
 
     if file_path.endswith(".csv"):
         df = pd.read_csv(file_path)
@@ -473,7 +541,7 @@ def visualization_options(request, file_id):
     return render(
         request,
         "visualization_options.html",
-        {"uploaded_file": uploaded_file, "numeric_columns": numeric_columns},
+        {"uploaded_file": uploaded_file, "columns": numeric_columns},
     )
 
 
@@ -544,3 +612,21 @@ def customize_analysis(request, file_id):
     return render(
         request, "customize_analysis.html", {"form": form, "file_id": file_id}
     )
+
+# Preview file view
+@login_required
+def preview_file(request, file_id):
+    uploaded_file = get_object_or_404(UploadedFile, id=file_id)
+    file_path = uploaded_file.file.path
+
+    if file_path.endswith(".csv"):
+        df = pd.read_csv(file_path)
+    elif file_path.endswith((".xls", ".xlsx")):
+        df = pd.read_excel(file_path, engine="openpyxl")
+    else:
+        messages.error(request, "Unsupported file format.")
+        return redirect("analyse:upload")
+
+    data_html = df.to_html(classes="table table-striped table-bordered", index=False)
+
+    return render(request, "preview.html", {"data": data_html, "file_id": file_id})

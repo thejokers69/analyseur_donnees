@@ -8,7 +8,7 @@ __pycache__/
 db.sqlite3
 media/
 uploads/
-
+__pycache__/
 # Environment
 .env
 env/
@@ -27,6 +27,7 @@ staticfiles/
 *.sublime-*
 .idea/
 .vscode/
+*.sublime-*
 *.swp
 *.swo
 *.swn
@@ -64,3 +65,13 @@ Thumbs.db
 *.py[cod]
 *.pyo
 *.class
+
+
+
+
+
+*.egg-info/
+*.egg
+pytestdebug.log
+*
+analyse/migrations/
