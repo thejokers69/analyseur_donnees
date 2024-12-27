@@ -81,7 +81,7 @@ def profile(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Votre adresse e-mail a été mise à jour.")
-            return redirect("profile")
+            return redirect("analyse:profile")
     return render(request, "profile.html", {"form": form})
 
 # # Utility function to load data
