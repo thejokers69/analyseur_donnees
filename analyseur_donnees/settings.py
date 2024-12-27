@@ -85,10 +85,11 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.getenv("DB_NAME", "analyseur_donnees"),
-        "USER": os.getenv("DB_USER", "thejokers"),
-        "PASSWORD": os.getenv("DB_PASSWORD", "password"),
+        "USER": os.getenv("DB_USER", "thejoker"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "sexcigarez2"),
         "HOST": os.getenv("DB_HOST", "localhost"),
         "PORT": os.getenv("DB_PORT", "5432"),
+        "OPTIONS": {"options": "-c search_path=public"},
     }
 }
 
@@ -122,7 +123,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/

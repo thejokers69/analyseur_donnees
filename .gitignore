@@ -75,7 +75,7 @@ Thumbs.db
 *.egg
 pytestdebug.log
 *
-analyse/migrations/
+
 
 
     

@@ -30,6 +30,8 @@ from .utils import load_data
 import logging
 
 logger = logging.getLogger(__name__)
+
+
 # Custom login views
 def custom_login(request):
     if request.method == "POST":
@@ -84,6 +86,7 @@ def profile(request):
             return redirect("analyse:profile")
     return render(request, "profile.html", {"form": form})
 
+
 # # Utility function to load data
 # def load_data(file_path):
 #     file_extension = os.path.splitext(file_path)[1].lower()
@@ -97,26 +100,29 @@ def profile(request):
 #     except Exception as e:
 #         raise ValueError(f"Error loading file: {e}")
 
+
 #  Vue Générique Exemple : some_view
 @login_required
 def some_view(request):
     # Remplacez `some_id` par la logique appropriée pour obtenir l'ID du fichier
-    some_id = request.GET.get('file_id')  # Exemple de récupération via GET
+    some_id = request.GET.get("file_id")  # Exemple de récupération via GET
     if not some_id:
         messages.error(request, "Aucun ID de fichier fourni.")
         return redirect("analyse:home")
-    
+
     try:
         file = UploadedFile.objects.get(id=some_id, user=request.user)
     except UploadedFile.DoesNotExist:
         messages.error(request, "Fichier non trouvé.")
         return redirect("analyse:home")
-    
+
     context = {
-        'file_id': file.id,
+        "file_id": file.id,
         # Ajoutez d'autres variables de contexte si nécessaire
     }
-    return render(request, 'template.html', context)
+    return render(request, "template.html", context)
+
+
 # Generate Histograms for each column
 def generate_histogram(df, column_name):
     plt.figure()
@@ -131,6 +137,9 @@ def generate_histogram(df, column_name):
 
 
 # Upload file view
+# /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/views.py
+
+
 @login_required
 def upload_file(request):
     customization_form = None
@@ -168,7 +177,7 @@ def upload_file(request):
             uploaded_file = UploadedFile.objects.get(id=file_id)
             file_path = uploaded_file.file.path
             columns = request.session.get("columns", [])
-            
+
             try:
                 if file_path.endswith(".csv"):
                     df = pd.read_csv(file_path)
@@ -177,7 +186,9 @@ def upload_file(request):
                 else:
                     raise ValueError("Unsupported file format.")
 
-                customization_form = AnalysisCustomizationForm(request.POST, columns=columns)
+                customization_form = AnalysisCustomizationForm(
+                    request.POST, columns=columns
+                )
                 if customization_form.is_valid():
                     selected_columns = customization_form.cleaned_data["columns"]
                     selected_stats = {
@@ -191,15 +202,37 @@ def upload_file(request):
                     df = df[selected_columns]
                     stats_results = {}
                     if selected_stats["mean"]:
-                        stats_results["mean"] = df.select_dtypes(include="number").mean().to_dict()
+                        try:
+                            stats_results["mean"] = (
+                                df.select_dtypes(include="number").mean().to_dict()
+                            )
+                        except Exception as e:
+                            logger.error(f"Error calculating mean: {e}")
+                            stats_results["mean"] = None
                     if selected_stats["median"]:
-                        stats_results["median"] = df.median().to_dict()
+                        try:
+                            stats_results["median"] = df.median().to_dict()
+                        except Exception as e:
+                            logger.error(f"Error calculating median: {e}")
+                            stats_results["median"] = None
                     if selected_stats["mode"]:
-                        stats_results["mode"] = df.mode().iloc[0].to_dict()
+                        try:
+                            stats_results["mode"] = df.mode().iloc[0].to_dict()
+                        except Exception as e:
+                            logger.error(f"Error calculating mode: {e}")
+                            stats_results["mode"] = None
                     if selected_stats["variance"]:
-                        stats_results["variance"] = df.var().to_dict()
+                        try:
+                            stats_results["variance"] = df.var().to_dict()
+                        except Exception as e:
+                            logger.error(f"Error calculating variance: {e}")
+                            stats_results["variance"] = None
                     if selected_stats["std_dev"]:
-                        stats_results["std_dev"] = df.std().to_dict()
+                        try:
+                            stats_results["std_dev"] = df.std().to_dict()
+                        except Exception as e:
+                            logger.error(f"Error calculating std_dev: {e}")
+                            stats_results["std_dev"] = None
 
                     # Save analysis results
                     analysis = AnalysisHistory(
@@ -214,8 +247,12 @@ def upload_file(request):
                     )
                     analysis.save()
 
-                    send_analysis_completed_email(request.user.email, uploaded_file.file.name)
-                    messages.success(request, f"Analysis of {uploaded_file.file.name} completed.")
+                    send_analysis_completed_email(
+                        request.user.email, uploaded_file.file.name
+                    )
+                    messages.success(
+                        request, f"Analysis of {uploaded_file.file.name} completed."
+                    )
                     return redirect("analyse:analysis_history")
             except Exception as e:
                 messages.error(request, f"Error during analysis: {str(e)}")
@@ -228,6 +265,7 @@ def upload_file(request):
         "upload.html",
         {"form": form, "customization_form": customization_form},
     )
+
 
 # Results view
 def results(request, file_id):
@@ -339,7 +377,7 @@ def send_analysis_completed_email(recipient_email, file_name):
     message = f"Votre analyse pour {file_name} est terminée. Vous pouvez télécharger les résultats depuis votre tableau de bord."
     email_from = settings.DEFAULT_FROM_EMAIL
     recipient_list = [recipient_email]
-    
+
     logger.debug(f"EMAIL_FROM: {email_from}")
     logger.debug(f"RECIPIENT_LIST: {recipient_list}")
 
@@ -358,6 +396,7 @@ def send_analysis_completed_email(recipient_email, file_name):
     except Exception as e:
         logger.error(f"Erreur lors de l'envoi de l'email: {e}")
         raise
+
 
 # Data table
 @login_required
@@ -437,7 +476,7 @@ def correlation_analysis(request, file_id):
 
 @login_required
 def visualization_options(request, file_id):
-    uploaded_file = get_object_or_404(UploadedFile, id=file_id, user=request.user)
+    uploaded_file = get_object_or_404(UploadedFile, id=file_id)
     file_path = uploaded_file.file.path
 
     # Load the data
@@ -451,6 +490,9 @@ def visualization_options(request, file_id):
 
     numeric_columns = df.select_dtypes(include="number").columns.tolist()
 
+    # Log numeric columns
+    logger.debug(f"Numeric columns: {numeric_columns}")
+
     if not numeric_columns:
         messages.error(
             request,
@@ -461,6 +503,10 @@ def visualization_options(request, file_id):
     if request.method == "POST":
         selected_columns = request.POST.getlist("columns")
         visualization_type = request.POST.get("visualization")
+
+        # Log selected columns and visualization type
+        logger.debug(f"Selected columns: {selected_columns}")
+        logger.debug(f"Visualization type: {visualization_type}")
 
         if not selected_columns:
             messages.error(
@@ -612,6 +658,7 @@ def customize_analysis(request, file_id):
         request, "customize_analysis.html", {"form": form, "file_id": file_id}
     )
 
+
 # Preview file view
 @login_required
 def preview_file(request, file_id):
@@ -629,3 +676,14 @@ def preview_file(request, file_id):
     data_html = df.to_html(classes="table table-striped table-bordered", index=False)
 
     return render(request, "preview.html", {"data": data_html, "file_id": file_id})
+
+
+# Delete analysis
+@login_required
+def delete_analysis(request, analysis_id):
+    analysis = get_object_or_404(AnalysisHistory, id=analysis_id, user=request.user)
+    analysis.delete()
+    messages.success(
+        request, f"L'analyse pour le fichier {analysis.file_name} a été supprimée."
+    )
+    return redirect("analyse:analysis_history")

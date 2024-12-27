@@ -38,4 +38,9 @@ urlpatterns = [
         views.visualization_options,
         name="visualization_options",
     ),
+    path(
+        "delete_analysis/<int:analysis_id>/",
+        views.delete_analysis,
+        name="delete_analysis",
+    ),
 ]

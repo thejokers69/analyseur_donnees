@@ -1,4 +1,5 @@
-{% comment %} /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/templates/analysis_history.html {% endcomment %}
+<!-- /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/templates/analysis_history.html -->
+
 {% load custom_filters %}
 {% load static %}
 <!DOCTYPE html>
@@ -13,7 +14,7 @@
 </head>
 <body>
     <!-- Navbar -->
-{% include 'navbar.html' %}
+    {% include 'navbar.html' %}
     <div class="container mt-5">
         
         <h2 class="text-center mb-4">Historique des Analyses</h2>
@@ -34,6 +35,7 @@
         <table class="table table-bordered table-hover align-middle text-center mt-4">
             <thead class="table-dark">
                 <tr>
+                    <th>File ID</th> 
                     <th>Nom du Fichier</th>
                     <th>Date d'Upload</th>
                     <th>Moyenne</th>
@@ -42,27 +44,29 @@
                     <th>Variance</th>
                     <th>Écart-type</th>
                     <th>Étendue</th>
-                    <th>Action</th>
+                    <th>Actions</th> 
                 </tr>
             </thead>
             <tbody>
                 {% for analysis in user_analyses %}
                 <tr>
+                    <td>{{ analysis.id }}</td>
                     <td>{{ analysis.file_name }}</td>
                     <td>{{ analysis.upload_date|date:"d M Y H:i" }}</td>
-                    <td>{{ analysis.mean }}</td>
-                    <td>{{ analysis.median }}</td>
-                    <td>{{ analysis.mode }}</td>
-                    <td>{{ analysis.variance }}</td>
-                    <td>{{ analysis.std_dev }}</td>
-                    <td>{{ analysis.range }}</td>
+                    <td>{% if analysis.mean %}{{ analysis.mean | safe }}{% else %}Aucune{% endif %}</td>
+                    <td>{% if analysis.median %}{{ analysis.median | safe }}{% else %}Aucune{% endif %}</td>
+                    <td>{% if analysis.mode %}{{ analysis.mode | safe }}{% else %}Aucune{% endif %}</td>
+                    <td>{% if analysis.variance %}{{ analysis.variance | safe }}{% else %}Aucune{% endif %}</td>
+                    <td>{% if analysis.std_dev %}{{ analysis.std_dev | safe }}{% else %}Aucune{% endif %}</td>
+                    <td>{% if analysis.range_values %}{{ analysis.range_values | safe }}{% else %}Aucune{% endif %}</td>
                     <td>
-                        <a href="{{ analysis.file.url }}" class="btn btn-sm btn-primary">Télécharger</a>
+                        <a href="{% url 'analyse:delete_analysis' analysis.id %}" class="btn btn-sm btn-danger mb-1">Supprimer</a>
+                        <a href="{% url 'analyse:visualization_options' analysis.uploaded_file.id %}" class="btn btn-sm btn-primary">Visualisation</a>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="9">Aucune analyse trouvée.</td>
+                    <td colspan="10">Aucune analyse trouvée.</td>
                 </tr>
                 {% endfor %}
             </tbody>
