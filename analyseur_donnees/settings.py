@@ -144,7 +144,7 @@ LOGIN_URL = 'analyse:login'
 MAILGUN_API_KEY = os.getenv("MAILGUN_API_KEY")
 MAILGUN_DOMAIN = os.getenv("MAILGUN_DOMAIN")
 
-#Email configurations
+# Email configurations
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.mailgun.org'
 EMAIL_PORT = 587
@@ -154,8 +154,10 @@ EMAIL_HOST_PASSWORD = '2f7e72509c4996f404cafb0dee660230-da554c25-a1ca5ab7'
 DEFAULT_FROM_EMAIL = 'brad@sandbox4b7f749321b54e59b9aac9acc0899e45.mailgun.org'
 
 # Mdeia files configurations
-MEDIA_URL = "/uploads/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "uploads")
+# MEDIA_URL = "/uploads/"
+# MEDIA_ROOT = os.path.join(BASE_DIR, "uploads")
+MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
+MEDIA_URL = "/media/"
 
 # Logging configurations
 LOGGING = {

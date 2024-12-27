@@ -438,12 +438,12 @@ def correlation_analysis(request, file_id):
 @login_required
 def visualization_options(request, file_id):
     uploaded_file = get_object_or_404(UploadedFile, id=file_id, user=request.user)
-    file_path=uploaded_file.file.path
-    df = load_data(file_path)
+    file_path = uploaded_file.file.path
 
+    # Load the data
     if file_path.endswith(".csv"):
         df = pd.read_csv(file_path)
-    elif file_path.endswith((".xls", ".xlsx")):
+    elif file_path.endswith(".xlsx"):
         df = pd.read_excel(file_path, engine="openpyxl")
     else:
         messages.error(request, "Unsupported file format.")
@@ -454,17 +454,13 @@ def visualization_options(request, file_id):
     if not numeric_columns:
         messages.error(
             request,
-            "No numeric columns available for visualization in the uploaded file.",
+            "Votre fichier ne contient pas de colonnes numériques pour la visualisation.",
         )
         return redirect("analyse:upload")
 
     if request.method == "POST":
         selected_columns = request.POST.getlist("columns")
         visualization_type = request.POST.get("visualization")
-
-        if visualization_type == "scatter" and len(selected_columns) != 2:
-            messages.error(request, "Scatter plots require exactly two columns.")
-            return redirect("analyse:visualization_options", file_id=file_id)
 
         if not selected_columns:
             messages.error(
@@ -534,10 +530,13 @@ def visualization_options(request, file_id):
         return render(
             request,
             "visualization_result.html",
-            {"plot_base64": plot_base64, "file_id": file_id},  # Pass file_id here
+            {
+                "plot_base64": plot_base64,
+                "file_id": file_id,
+                "visualization_type": visualization_type,
+            },
         )
 
-    # Render the visualization options form
     return render(
         request,
         "visualization_options.html",
