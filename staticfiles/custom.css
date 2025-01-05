@@ -1,4 +1,4 @@
-/* custom.css */
+/* /Users/thejoker/Documents/GitHub/analyseur_donnees/staticfiles/custom.css */
 
 /* Body and Container Styling */
 body {
@@ -80,4 +80,8 @@ h4 {
 /* Form Elements */
 .form-control {
     border-radius: 5px;
+}
+
+.form-label {
+    font-weight: bold;
 }

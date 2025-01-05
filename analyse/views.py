@@ -1,6 +1,7 @@
 # /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/views.py
 
 import matplotlib
+import plotly.express as px
 
 matplotlib.use("Agg")
 import seaborn as sns
@@ -28,6 +29,10 @@ from django.core.files.base import ContentFile
 from django.core.mail import send_mail
 from .utils import load_data
 import logging
+from plotly.io import to_image
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +59,7 @@ def home(request):
     uploaded_files = None
     if request.user.is_authenticated:
         uploaded_files = UploadedFile.objects.filter(user=request.user)
+        print(uploaded_files)
     return render(request, "home.html", {"uploaded_files": uploaded_files})
 
 
@@ -137,129 +143,63 @@ def generate_histogram(df, column_name):
 
 
 # Upload file view
-# /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/views.py
-
-
 @login_required
 def upload_file(request):
     customization_form = None
     if request.method == "POST":
-        if "upload_submit" in request.POST:  # File upload form submitted
+        try:
+            # Initialize the form with uploaded data
             form = UploadFileForm(request.POST, request.FILES)
             if form.is_valid():
-                uploaded_file = form.save()
-                file_extension = os.path.splitext(uploaded_file.file.name)[1].lower()
+                uploaded_file = form.save(commit=False)
+                uploaded_file.user = (
+                    request.user
+                )  # Associate the file with the logged-in user
+                uploaded_file.save()
 
-                # Handle file upload and validate
+                # Validate file size
+                if uploaded_file.file.size > 10 * 1024 * 1024:  # 10 MB
+                    messages.error(request, "File size exceeds 10 MB.")
+                    uploaded_file.delete()
+                    return redirect("analyse:upload")
+
+                # Validate and process file type
+                file_extension = os.path.splitext(uploaded_file.file.name)[1].lower()
                 try:
                     if file_extension in [".xls", ".xlsx"]:
                         df = pd.read_excel(uploaded_file.file.path, engine="openpyxl")
                     elif file_extension == ".csv":
                         df = pd.read_csv(uploaded_file.file.path)
                     else:
-                        raise ValueError("Unsupported file format.")
-
-                    # Store columns in session for customization form
-                    request.session["uploaded_file_id"] = uploaded_file.id
-                    request.session["columns"] = df.columns.tolist()
-                    customization_form = AnalysisCustomizationForm(columns=df.columns)
-                except Exception as e:
-                    messages.error(request, f"Error processing file: {str(e)}")
+                        messages.error(request, "Unsupported file format.")
+                        uploaded_file.delete()
+                        return redirect("analyse:upload")
+                except Exception as file_error:
+                    logger.error(f"File processing error: {str(file_error)}")
+                    messages.error(
+                        request, "Failed to process the file. Please check the format."
+                    )
+                    uploaded_file.delete()
                     return redirect("analyse:upload")
 
-        elif "customize_submit" in request.POST:  # Customization form submitted
-            # Retrieve uploaded file and columns from session
-            file_id = request.session.get("uploaded_file_id")
-            if not file_id:
-                messages.error(request, "No file uploaded for analysis.")
-                return redirect("analyse:upload")
+                # Store file details in session for further use
+                request.session["uploaded_file_id"] = uploaded_file.id
+                request.session["columns"] = df.columns.tolist()
 
-            uploaded_file = UploadedFile.objects.get(id=file_id)
-            file_path = uploaded_file.file.path
-            columns = request.session.get("columns", [])
-
-            try:
-                if file_path.endswith(".csv"):
-                    df = pd.read_csv(file_path)
-                elif file_path.endswith((".xls", ".xlsx")):
-                    df = pd.read_excel(file_path, engine="openpyxl")
-                else:
-                    raise ValueError("Unsupported file format.")
-
-                customization_form = AnalysisCustomizationForm(
-                    request.POST, columns=columns
+                # Initialize the customization form with column names
+                customization_form = AnalysisCustomizationForm(columns=df.columns)
+                messages.success(
+                    request, f"File '{uploaded_file.file.name}' uploaded successfully."
                 )
-                if customization_form.is_valid():
-                    selected_columns = customization_form.cleaned_data["columns"]
-                    selected_stats = {
-                        "mean": customization_form.cleaned_data["mean"],
-                        "median": customization_form.cleaned_data["median"],
-                        "mode": customization_form.cleaned_data["mode"],
-                        "variance": customization_form.cleaned_data["variance"],
-                        "std_dev": customization_form.cleaned_data["std_dev"],
-                    }
-
-                    df = df[selected_columns]
-                    stats_results = {}
-                    if selected_stats["mean"]:
-                        try:
-                            stats_results["mean"] = (
-                                df.select_dtypes(include="number").mean().to_dict()
-                            )
-                        except Exception as e:
-                            logger.error(f"Error calculating mean: {e}")
-                            stats_results["mean"] = None
-                    if selected_stats["median"]:
-                        try:
-                            stats_results["median"] = df.median().to_dict()
-                        except Exception as e:
-                            logger.error(f"Error calculating median: {e}")
-                            stats_results["median"] = None
-                    if selected_stats["mode"]:
-                        try:
-                            stats_results["mode"] = df.mode().iloc[0].to_dict()
-                        except Exception as e:
-                            logger.error(f"Error calculating mode: {e}")
-                            stats_results["mode"] = None
-                    if selected_stats["variance"]:
-                        try:
-                            stats_results["variance"] = df.var().to_dict()
-                        except Exception as e:
-                            logger.error(f"Error calculating variance: {e}")
-                            stats_results["variance"] = None
-                    if selected_stats["std_dev"]:
-                        try:
-                            stats_results["std_dev"] = df.std().to_dict()
-                        except Exception as e:
-                            logger.error(f"Error calculating std_dev: {e}")
-                            stats_results["std_dev"] = None
-
-                    # Save analysis results
-                    analysis = AnalysisHistory(
-                        user=request.user,
-                        file_name=uploaded_file.file.name,
-                        uploaded_file=uploaded_file,
-                        mean=stats_results.get("mean"),
-                        median=stats_results.get("median"),
-                        mode=stats_results.get("mode"),
-                        variance=stats_results.get("variance"),
-                        std_dev=stats_results.get("std_dev"),
-                    )
-                    analysis.save()
-
-                    send_analysis_completed_email(
-                        request.user.email, uploaded_file.file.name
-                    )
-                    messages.success(
-                        request, f"Analysis of {uploaded_file.file.name} completed."
-                    )
-                    return redirect("analyse:analysis_history")
-            except Exception as e:
-                messages.error(request, f"Error during analysis: {str(e)}")
-                return redirect("analyse:upload")
+            else:
+                messages.error(request, "Invalid form submission. Please try again.")
+        except Exception as e:
+            logger.error(f"Unexpected error during file upload: {str(e)}")
+            messages.error(request, "An unexpected error occurred. Please try again.")
     else:
         form = UploadFileForm()
 
+    # Render the upload template with form
     return render(
         request,
         "upload.html",
@@ -687,3 +627,149 @@ def delete_analysis(request, analysis_id):
         request, f"L'analyse pour le fichier {analysis.file_name} a été supprimée."
     )
     return redirect("analyse:analysis_history")
+
+
+# Caclcul de probabilities
+@login_required
+def probability_analysis(request, file_id):
+    uploaded_file = get_object_or_404(UploadedFile, id=file_id)
+    file_path = uploaded_file.file.path
+
+    if file_path.endswith(".csv"):
+        df = pd.read_csv(file_path)
+    elif file_path.endswith((".xls", ".xlsx")):
+        df = pd.read_excel(file_path, engine="openpyxl")
+    else:
+        messages.error(request, "Unsupported file format.")
+        return redirect("analyse:upload")
+
+    numeric_columns = df.select_dtypes(include="number").columns.tolist()
+    probabilities = {}
+
+    if request.method == "POST":
+        selected_column = request.POST.get("column")
+        range_start = float(request.POST.get("range_start"))
+        range_end = float(request.POST.get("range_end"))
+
+        if selected_column in numeric_columns:
+            column_data = df[selected_column].dropna()
+            total_count = len(column_data)
+            in_range_count = column_data.between(range_start, range_end).sum()
+            probabilities[selected_column] = in_range_count / total_count
+
+    return render(
+        request,
+        "probability_analysis.html",
+        {"numeric_columns": numeric_columns, "probabilities": probabilities},
+    )
+
+
+# Les graphiques interactifs avec ploty
+
+
+@login_required
+def interactive_visualization(request, file_id):
+    uploaded_file = get_object_or_404(UploadedFile, id=file_id)
+    file_path = uploaded_file.file.path
+
+    if file_path.endswith(".csv"):
+        df = pd.read_csv(file_path)
+    elif file_path.endswith((".xls", ".xlsx")):
+        df = pd.read_excel(file_path, engine="openpyxl")
+    else:
+        messages.error(request, "Unsupported file format.")
+        return redirect("analyse:upload")
+
+    numeric_columns = df.select_dtypes(include="number").columns.tolist()
+    plot_html = None
+
+    if request.method == "POST":
+        x_column = request.POST.get("x_column")
+        y_column = request.POST.get("y_column")
+        chart_type = request.POST.get("chart_type")
+
+        if x_column in numeric_columns and y_column in numeric_columns:
+            if chart_type == "scatter":
+                fig = px.scatter(df, x=x_column, y=y_column, title="Scatter Plot")
+            elif chart_type == "line":
+                fig = px.line(df, x=x_column, y=y_column, title="Line Chart")
+            elif chart_type == "bar":
+                fig = px.bar(df, x=x_column, y=y_column, title="Bar Chart")
+
+            plot_html = fig.to_html(full_html=False)
+
+    return render(
+        request,
+        "interactive_visualization.html",
+        {"numeric_columns": numeric_columns, "plot_html": plot_html},
+    )
+
+
+@login_required
+def download_pdf_with_plotly(request, analysis_id):
+    analysis = get_object_or_404(AnalysisHistory, id=analysis_id, user=request.user)
+
+    # Example Plotly figure
+    fig = px.bar(x=["A", "B", "C"], y=[10, 20, 30], title="Sample Plot")
+    plot_image = to_image(fig, format="png")
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="{analysis.file_name}_interactive_analysis.pdf"'
+    )
+
+    pdf = canvas.Canvas(response, pagesize=A4)
+    pdf.setTitle(f"Analysis Report - {analysis.file_name}")
+    pdf.drawString(100, 800, "Interactive Analysis Report")
+    pdf.drawImage(plot_image, 100, 600, width=400, height=200)
+    pdf.showPage()
+    pdf.save()
+
+    return response
+
+
+# Regression lineaire
+@login_required
+def linear_regression_analysis(request, file_id):
+    uploaded_file = get_object_or_404(UploadedFile, id=file_id)
+    file_path = uploaded_file.file.path
+
+    if file_path.endswith(".csv"):
+        df = pd.read_csv(file_path)
+    elif file_path.endswith((".xls", ".xlsx")):
+        df = pd.read_excel(file_path, engine="openpyxl")
+    else:
+        messages.error(request, "Unsupported file format.")
+        return redirect("analyse:upload")
+
+    numeric_columns = df.select_dtypes(include="number").columns.tolist()
+    model_results = None
+
+    if request.method == "POST":
+        target_column = request.POST.get("target_column")
+        features = request.POST.getlist("features")
+
+        if target_column in numeric_columns and all(
+            f in numeric_columns for f in features
+        ):
+            X = df[features]
+            y = df[target_column]
+
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42
+            )
+            model = LinearRegression()
+            model.fit(X_train, y_train)
+            predictions = model.predict(X_test)
+
+            model_results = {
+                "coefficients": dict(zip(features, model.coef_)),
+                "intercept": model.intercept_,
+                "mean_squared_error": mean_squared_error(y_test, predictions),
+            }
+
+    return render(
+        request,
+        "linear_regression_analysis.html",
+        {"numeric_columns": numeric_columns, "model_results": model_results},
+    )

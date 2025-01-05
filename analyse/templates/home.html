@@ -19,6 +19,16 @@
 {% include 'navbar.html' %}
 
 <div class="container mt-5">
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
     {% if user.is_authenticated %}
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Bienvenue, {{ user.username }}</h2>
@@ -42,8 +52,8 @@
             <tbody>
                 {% for file in uploaded_files %}
                 <tr>
-                    <td>{{ file.file_name }}</td>
-                    <td>{{ file.upload_date|date:"d M Y H:i" }}</td>
+                    <td>{{ file.file.name }}</td>
+                    <td>{{ file.uploaded_at|date:"d M Y H:i" }}</td>
                     <td>
                         <a href="{{ file.file.url }}" class="btn btn-sm btn-success me-2" download>Télécharger</a>
                         <a href="{% url 'analyse:results' file.id %}" class="btn btn-sm btn-info me-2">Voir Résultats</a>
