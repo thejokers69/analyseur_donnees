@@ -1,5 +1,4 @@
 # /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/views.py
-
 import matplotlib
 import plotly.express as px
 
@@ -33,6 +32,9 @@ from plotly.io import to_image
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
+from scipy.stats import kurtosis, skew
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +52,7 @@ def custom_login(request):
             messages.error(request, "Invalid username or password.")
     else:
         form = AuthenticationForm()
-    return render(request, "login.html", {"form": form})
+    return render(request, "workshop/login.html", {"form": form})
 
 
 # Homepage view
@@ -60,7 +62,7 @@ def home(request):
     if request.user.is_authenticated:
         uploaded_files = UploadedFile.objects.filter(user=request.user)
         print(uploaded_files)
-    return render(request, "home.html", {"uploaded_files": uploaded_files})
+    return render(request, "workshop/home.html", {"uploaded_files": uploaded_files})
 
 
 # Register view
@@ -77,7 +79,7 @@ def register(request):
             messages.error(request, "Registration failed. Please check the form.")
     else:
         form = UserCreationForm()
-    return render(request, "register.html", {"form": form})
+    return render(request, "workshop/register.html", {"form": form})
 
 
 # Profile view
@@ -90,7 +92,7 @@ def profile(request):
             form.save()
             messages.success(request, "Votre adresse e-mail a été mise à jour.")
             return redirect("analyse:profile")
-    return render(request, "profile.html", {"form": form})
+    return render(request, "workshop/profile.html", {"form": form})
 
 
 # # Utility function to load data
@@ -110,8 +112,8 @@ def profile(request):
 #  Vue Générique Exemple : some_view
 @login_required
 def some_view(request):
-    # Remplacez `some_id` par la logique appropriée pour obtenir l'ID du fichier
-    some_id = request.GET.get("file_id")  # Exemple de récupération via GET
+
+    some_id = request.GET.get("file_id")
     if not some_id:
         messages.error(request, "Aucun ID de fichier fourni.")
         return redirect("analyse:home")
@@ -129,80 +131,98 @@ def some_view(request):
     return render(request, "template.html", context)
 
 
-# Generate Histograms for each column
-def generate_histogram(df, column_name):
-    plt.figure()
-    df[column_name].hist()
-    plt.title(f"Histogram of {column_name}")
-    plt.xlabel(column_name)
-    plt.ylabel("Frequency")
-    file_path = f"static/{column_name}_histogram.png"
-    plt.savefig(file_path)
-    plt.close()
-    return file_path
+# # Generate Histograms for each column
+# def generate_histogram(df, column_name):
+#     plt.figure()
+#     df[column_name].hist()
+#     plt.title(f"Histogram of {column_name}")
+#     plt.xlabel(column_name)
+#     plt.ylabel("Frequency")
+#     file_path = f"static/{column_name}_histogram.png"
+#     plt.savefig(file_path)
+#     plt.close()
+#     return file_path
 
 
 # Upload file view
 @login_required
 def upload_file(request):
+    global dataframe
     customization_form = None
     if request.method == "POST":
         try:
-            # Initialize the form with uploaded data
             form = UploadFileForm(request.POST, request.FILES)
             if form.is_valid():
                 uploaded_file = form.save(commit=False)
-                uploaded_file.user = (
-                    request.user
-                )  # Associate the file with the logged-in user
+                uploaded_file.user = request.user
                 uploaded_file.save()
 
                 # Validate file size
                 if uploaded_file.file.size > 10 * 1024 * 1024:  # 10 MB
                     messages.error(request, "File size exceeds 10 MB.")
                     uploaded_file.delete()
-                    return redirect("analyse:upload")
+                    return JsonResponse(
+                        {"error": "File size exceeds 10 MB."}, status=400
+                    )
 
                 # Validate and process file type
                 file_extension = os.path.splitext(uploaded_file.file.name)[1].lower()
                 try:
                     if file_extension in [".xls", ".xlsx"]:
-                        df = pd.read_excel(uploaded_file.file.path, engine="openpyxl")
+                        dataframe = pd.read_excel(
+                            uploaded_file.file.path, engine="openpyxl"
+                        )
                     elif file_extension == ".csv":
-                        df = pd.read_csv(uploaded_file.file.path)
+                        dataframe = pd.read_csv(uploaded_file.file.path)
                     else:
                         messages.error(request, "Unsupported file format.")
                         uploaded_file.delete()
-                        return redirect("analyse:upload")
+                        return JsonResponse(
+                            {"error": "Unsupported file format."}, status=400
+                        )
                 except Exception as file_error:
                     logger.error(f"File processing error: {str(file_error)}")
                     messages.error(
                         request, "Failed to process the file. Please check the format."
                     )
                     uploaded_file.delete()
-                    return redirect("analyse:upload")
+                    return JsonResponse(
+                        {
+                            "error": "Failed to process the file. Please check the format."
+                        },
+                        status=400,
+                    )
 
                 # Store file details in session for further use
                 request.session["uploaded_file_id"] = uploaded_file.id
-                request.session["columns"] = df.columns.tolist()
+                request.session["columns"] = dataframe.columns.tolist()
+                request.session["dataframe"] = dataframe.to_json()
 
                 # Initialize the customization form with column names
-                customization_form = AnalysisCustomizationForm(columns=df.columns)
+                customization_form = AnalysisCustomizationForm(
+                    columns=dataframe.columns
+                )
                 messages.success(
                     request, f"File '{uploaded_file.file.name}' uploaded successfully."
                 )
+                return JsonResponse({"success": True}, status=200)
             else:
                 messages.error(request, "Invalid form submission. Please try again.")
+                return JsonResponse(
+                    {"error": "Invalid form submission. Please try again."}, status=400
+                )
         except Exception as e:
             logger.error(f"Unexpected error during file upload: {str(e)}")
             messages.error(request, "An unexpected error occurred. Please try again.")
+            return JsonResponse(
+                {"error": "An unexpected error occurred. Please try again."}, status=500
+            )
     else:
         form = UploadFileForm()
 
-    # Render the upload template with form
     return render(
         request,
-        "upload.html",
+        "workshop/upload.html",
         {"form": form, "customization_form": customization_form},
     )
 
@@ -226,6 +246,8 @@ def results(request, file_id):
     variance = df.var()
     std_dev = df.std()
     range_values = df.max() - df.min()
+    skewness = df.apply(lambda x: skew(x.dropna()), axis=0)
+    kurtosis_values = df.apply(lambda x: kurtosis(x.dropna()), axis=0)
 
     context = {
         "mean": mean.to_dict(),
@@ -234,8 +256,10 @@ def results(request, file_id):
         "variance": variance.to_dict(),
         "std_dev": std_dev.to_dict(),
         "range_values": range_values.to_dict(),
+        "skewness": skewness.to_dict(),
+        "kurtosis": kurtosis_values.to_dict(),
     }
-    return render(request, "results.html", context)
+    return render(request, "workshop/results.html", context)
 
 
 # Analysis History view
@@ -244,7 +268,9 @@ def analysis_history(request):
     user_analyses = AnalysisHistory.objects.filter(user=request.user).order_by(
         "-upload_date"
     )
-    return render(request, "analysis_history.html", {"user_analyses": user_analyses})
+    return render(
+        request, "analysis/analysis_history.html", {"user_analyses": user_analyses}
+    )
 
 
 # Download CSV
@@ -355,7 +381,9 @@ def data_table_view(request, file_id):
     data = df.values.tolist()
     columns = df.columns.tolist()
 
-    return render(request, "data_table.html", {"data": data, "columns": columns})
+    return render(
+        request, "visualization/data_table.html", {"data": data, "columns": columns}
+    )
 
 
 # Correlation and regression analysis
@@ -409,7 +437,7 @@ def correlation_analysis(request, file_id):
 
     return render(
         request,
-        "correlation_analysis.html",
+        "analysis/correlation_analysis.html",
         context,
     )
 
@@ -512,10 +540,30 @@ def visualization_options(request, file_id):
                 plt.close()
                 plot_base64 = base64.b64encode(buffer.getvalue()).decode()
                 buffer.close()
+        elif visualization_type == "kde_plot":
+            for col in selected_columns:
+                plt.figure()
+                sns.kdeplot(df[col], shade=True)
+                plt.title(f"KDE Plot of {col}")
+                buffer = BytesIO()
+                plt.savefig(buffer, format="png")
+                plt.close()
+                plot_base64 = base64.b64encode(buffer.getvalue()).decode()
+                buffer.close()
+        elif visualization_type == "violin_plot":
+            if len(selected_columns) == 1:
+                plt.figure()
+                sns.violinplot(data=df[selected_columns[0]])
+                plt.title(f"Violin Plot of {selected_columns[0]}")
+                buffer = BytesIO()
+                plt.savefig(buffer, format="png")
+                plt.close()
+                plot_base64 = base64.b64encode(buffer.getvalue()).decode()
+                buffer.close()
 
         return render(
             request,
-            "visualization_result.html",
+            "visualization/visualization_result.html",
             {
                 "plot_base64": plot_base64,
                 "file_id": file_id,
@@ -525,7 +573,7 @@ def visualization_options(request, file_id):
 
     return render(
         request,
-        "visualization_options.html",
+        "visualization/visualization_options.html",
         {"uploaded_file": uploaded_file, "columns": numeric_columns},
     )
 
@@ -588,14 +636,14 @@ def customize_analysis(request, file_id):
 
             return render(
                 request,
-                "analysis_results.html",
+                "analysis/analysis_results.html",
                 {"results": results, "file_name": uploaded_file.file.name},
             )
     else:
         form = AnalysisCustomizationForm(columns=df.columns)
 
     return render(
-        request, "customize_analysis.html", {"form": form, "file_id": file_id}
+        request, "analysis/customize_analysis.html", {"form": form, "file_id": file_id}
     )
 
 
@@ -615,7 +663,9 @@ def preview_file(request, file_id):
 
     data_html = df.to_html(classes="table table-striped table-bordered", index=False)
 
-    return render(request, "preview.html", {"data": data_html, "file_id": file_id})
+    return render(
+        request, "preview/preview.html", {"data": data_html, "file_id": file_id}
+    )
 
 
 # Delete analysis
@@ -659,7 +709,7 @@ def probability_analysis(request, file_id):
 
     return render(
         request,
-        "probability_analysis.html",
+        "analysis/probability_analysis.html",
         {"numeric_columns": numeric_columns, "probabilities": probabilities},
     )
 
@@ -700,7 +750,7 @@ def interactive_visualization(request, file_id):
 
     return render(
         request,
-        "interactive_visualization.html",
+        "visualization/interactive_visualization.html",
         {"numeric_columns": numeric_columns, "plot_html": plot_html},
     )
 
@@ -773,3 +823,133 @@ def linear_regression_analysis(request, file_id):
         "linear_regression_analysis.html",
         {"numeric_columns": numeric_columns, "model_results": model_results},
     )
+
+
+# Slice and indexing functions:
+def slicing_and_indexing(request):
+    global dataframe
+    is_file_uploaded = dataframe is not None
+
+    if not is_file_uploaded:
+        return render(
+            request,
+            "visualization/slicing_indexing.html",
+            {
+                "is_file_uploaded": is_file_uploaded,
+                "error": "No file uploaded yet. Please upload a CSV file first.",
+            },
+        )
+
+    if request.method == "POST":
+        # Obtenir les paramètres de la requête
+        row_start = int(request.POST.get("row_start", 0))
+        row_end = int(request.POST.get("row_end", len(dataframe) - 1))
+        selected_cols = request.POST.getlist("columns")
+
+        # Filtrer les données
+        sliced_df = dataframe.loc[row_start:row_end, selected_cols]
+
+        # Calcul des statistiques
+        selected_stats = request.POST.getlist("stats")
+        stats = {}
+        if selected_stats:
+            numeric_sliced_df = sliced_df.select_dtypes(include=[np.number])
+            if "moyenne" in selected_stats:
+                stats["Moyenne"] = numeric_sliced_df.mean().to_dict()
+            if "mediane" in selected_stats:
+                stats["Médiane"] = numeric_sliced_df.median().to_dict()
+            if "variance" in selected_stats:
+                stats["Variance"] = numeric_sliced_df.var().to_dict()
+            if "std_dev" in selected_stats:
+                stats["Écart Type"] = numeric_sliced_df.std().to_dict()
+            if "range" in selected_stats:
+                stats["Étendue"] = (
+                    numeric_sliced_df.max() - numeric_sliced_df.min()
+                ).to_dict()
+
+        # Génération des graphiques
+        plots = []
+        for col in selected_cols:
+            if col in sliced_df.select_dtypes(include=[np.number]).columns:
+                fig, ax = plt.subplots()
+                sns.histplot(sliced_df[col], kde=True, ax=ax)
+                ax.set_title(f"Distribution de {col}")
+                ax.set_xlabel(col)
+                ax.set_ylabel("Fréquence")
+                buffer = BytesIO()
+                plt.savefig(buffer, format="png")
+                buffer.seek(0)
+                plots.append(base64.b64encode(buffer.getvalue()).decode())
+                buffer.close()
+                plt.close(fig)
+
+        # Retourner les résultats
+        return render(
+            request,
+            "visualization/slicing_indexing.html",
+            {
+                "columns": dataframe.columns,
+                "row_numbers": range(len(dataframe)),
+                "sliced_data": sliced_df.to_html(classes="table table-striped"),
+                "stats": stats,
+                "plots": plots,
+                "is_file_uploaded": is_file_uploaded,
+            },
+        )
+
+    # Retourner la vue initiale
+    return render(
+        request,
+        "visualization/slicing_indexing.html",
+        {
+            "columns": dataframe.columns,
+            "row_numbers": range(len(dataframe)),
+            "data": dataframe.to_html(classes="table table-striped"),
+            "is_file_uploaded": is_file_uploaded,
+        },
+    )
+
+
+# Handle missing values
+@login_required
+def missing_values_analysis(request, file_id):
+    uploaded_file = get_object_or_404(UploadedFile, id=file_id)
+    df = pd.read_csv(uploaded_file.file.path)
+
+    if request.method == "POST":
+        strategy = request.POST.get("missing_value_strategy")
+        if strategy == "drop":
+            df = df.dropna()
+        elif strategy == "mean":
+            df = df.fillna(df.mean())
+        elif strategy == "median":
+            df = df.fillna(df.median())
+
+        # Save the cleaned data back
+        df.to_csv(uploaded_file.file.path, index=False)
+        messages.success(request, "Missing values handled successfully!")
+        return redirect("analyse:data_preview", file_id=file_id)
+
+    return render(
+        request,
+        "analysis/missing_values.html",
+        {"file_id": file_id, "columns": df.columns},
+    )
+
+
+# Data preview and Editing
+@csrf_exempt
+@login_required
+def update_cell(request, file_id):
+    if request.method == "POST":
+        uploaded_file = get_object_or_404(UploadedFile, id=file_id)
+        df = pd.read_csv(uploaded_file.file.path)
+
+        row_index = int(request.POST.get("row"))
+        column_name = request.POST.get("column")
+        new_value = request.POST.get("value")
+
+        df.at[row_index, column_name] = new_value
+        df.to_csv(uploaded_file.file.path, index=False)
+        return JsonResponse({"status": "success"})
+    return JsonResponse({"status": "error", "message": "Invalid request."})
