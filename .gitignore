@@ -79,3 +79,6 @@ pytestdebug.log
 
 # Log files
 *.log
+
+# ZZZZ:
+/Users/thejoker/Documents/GitHub/analyseur_donnees/large_numeric_data.csv
