@@ -1,0 +1,36 @@
+{% comment %} /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/templates/analysis/missing_values.html {% endcomment %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion des Valeurs Manquantes</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+</head>
+<body>
+    <!-- Navbar -->
+    {% include 'components/navbar.html' %}
+    <div class="container mt-5">
+        <h2 class="mb-4">Gestion des Valeurs Manquantes</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="missing_value_strategy" class="form-label">Sélectionner la stratégie :</label>
+                <select id="missing_value_strategy" name="missing_value_strategy" class="form-select" required>
+                    <option value="drop">Supprimer les lignes avec des valeurs manquantes</option>
+                    <option value="mean">Remplir avec la moyenne</option>
+                    <option value="median">Remplir avec la médiane</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Appliquer</button>
+        </form>
+        <a href="{% url 'analyse:data_preview' file_id %}" class="btn btn-secondary mt-3">Retour à la prévisualisation des données</a>
+        <a href="{% url 'analyse:home' %}" class="btn btn-secondary mt-3">Retour à l'accueil</a>
+    </div>
+    <!-- Bootstrap JS Bundle avec Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

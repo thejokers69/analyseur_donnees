@@ -1,4 +1,5 @@
 # /Users/thejoker/Documents/GitHub/analyseur_donnees/.gitignore
+
 # Django specific
 *.log
 *.pot
@@ -6,19 +7,22 @@
 *.mo
 __pycache__/
 db.sqlite3
-media/
-uploads/
-__pycache__/
-# Environment
-.env
+media/             # Ignore everything in media/
+uploads/           # Ignore everything in uploads/
+
+# Environment variables
+.env               # Environment file
 env/
 venv/
+config/settings_production.py  # Production-specific configurations
 
-.DS_Store
-.git/index.lock
+# System specific
+.DS_Store          # macOS metadata
+Thumbs.db          # Windows metadata
+.git/index.lock    # Git lock file
 
 # Static files
-static/
+static/            # Ignore generated static files
 staticfiles/
 *.sass-cache/
 *.css.map
@@ -26,10 +30,9 @@ staticfiles/
 
 # IDE and editor settings
 *.sublime-*
-.idea/
-.vscode/
-*.sublime-*
-*.swp
+.idea/             # IntelliJ IDEA
+.vscode/           # VSCode
+*.swp              # Vim swap files
 *.swo
 *.swn
 
@@ -43,39 +46,36 @@ coverage.xml
 *.cover
 *.py,cover
 
-# Pytest
+# Pytest and testing
 .pytest_cache/
 .tox/
+pytestdebug.log
 
 # MyPy
 .mypy_cache/
 
-# Temporary files
+# Temporary files and backups
 *.tmp
 *.bak
 *.orig
 *.out
 *.rej
-Thumbs.db
-
-# Logs and databases
-*.log
-*.sqlite3
 
 # Compiled files
 *.py[cod]
 *.pyo
 *.class
 
-
-
-
-
+# Egg files
 *.egg-info/
 *.egg
-pytestdebug.log
-*
 
+# IPython/Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb            # Ignore local Notebook files
 
+# SQL dump files
+*.sql              # Ignore SQL dump files
 
-    
+# Log files
+*.log              # Ignore log files

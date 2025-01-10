@@ -1,0 +1,90 @@
+{% comment %} /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/templates/visualization/slicing_indexing.html {% endcomment %}
+{% extends "components/navbar.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Slicing et Indexing</h2>
+
+    <form method="post" action="{% url 'analyse:slicing_and_indexing' %}">
+        {% csrf_token %}
+        <h4>🔢 Sélectionner les lignes :</h4>
+        <div class="mb-3">
+            <label for="row_start" class="form-label">Début :</label>
+            <input type="number" id="row_start" name="row_start" min="0" max="{{ row_numbers|length }}" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label for="row_end" class="form-label">Fin :</label>
+            <input type="number" id="row_end" name="row_end" min="0" max="{{ row_numbers|length }}" class="form-control">
+        </div>
+
+        <h4>📋 Sélectionner les colonnes :</h4>
+        <div class="mb-3">
+            {% for column in columns %}
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" name="columns" value="{{ column }}" id="column_{{ forloop.counter }}">
+                    <label class="form-check-label" for="column_{{ forloop.counter }}">{{ column }}</label>
+                </div>
+            {% endfor %}
+        </div>
+
+        <h4>📊 Calculer les statistiques :</h4>
+        <div class="mb-3">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="stats" value="moyenne" id="stat_moyenne">
+                <label class="form-check-label" for="stat_moyenne">Moyenne</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="stats" value="mediane" id="stat_mediane">
+                <label class="form-check-label" for="stat_mediane">Médiane</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="stats" value="variance" id="stat_variance">
+                <label class="form-check-label" for="stat_variance">Variance</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="stats" value="std_dev" id="stat_std_dev">
+                <label class="form-check-label" for="stat_std_dev">Écart Type</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="stats" value="range" id="stat_range">
+                <label class="form-check-label" for="stat_range">Étendue</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="stats" value="coefficient_of_variation" id="stat_coefficient_of_variation">
+                <label class="form-check-label" for="stat_coefficient_of_variation">Coefficient de Variation</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="stats" value="skewness" id="stat_skewness">
+                <label class="form-check-label" for="stat_skewness">Skewness</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="stats" value="kurtosis" id="stat_kurtosis">
+                <label class="form-check-label" for="stat_kurtosis">Kurtosis</label>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-2">Appliquer</button>
+        <a href="{% url 'analyse:home' %}" class="btn btn-secondary mt-2">Retour à l'accueil</a>
+    </form>
+
+    {% if sliced_data %}
+        <h4 class="mt-4">📝 Données Sélectionnées :</h4>
+        <div>{{ sliced_data|safe }}</div>
+    {% endif %}
+
+    {% if stats %}
+        <h4 class="mt-4">📊 Statistiques Calculées :</h4>
+        <ul>
+            {% for stat, values in stats.items %}
+                <li>{{ stat }} : {{ values }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if plots %}
+        <h4 class="mt-4">📈 Graphiques :</h4>
+        {% for plot in plots %}
+            <img src="data:image/png;base64,{{ plot }}" alt="Graphique" class="img-fluid mb-3">
+        {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

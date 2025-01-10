@@ -1,0 +1,91 @@
+{% comment %} /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/templates/analysis/probability_analysis.html {% endcomment %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Analyse de Probabilité</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+</head>
+<body>
+<!-- Navbar -->
+{% include 'components/navbar.html' %}
+<div class="container mt-5">
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    <h2>Analyse de Probabilité</h2>
+    <form method="post" class="needs-validation" novalidate>
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="column" class="form-label">Sélectionner la Colonne :</label>
+            <select name="column" id="column" class="form-select" required>
+                {% for column in numeric_columns %}
+                    <option value="{{ column }}">{{ column }}</option>
+                {% endfor %}
+            </select>
+            <div class="invalid-feedback">
+                Veuillez sélectionner une colonne.
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="range_start" class="form-label">Début de la Plage :</label>
+            <input type="number" step="any" name="range_start" id="range_start" class="form-control" required>
+            <div class="invalid-feedback">
+                Veuillez entrer une valeur de début de plage.
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="range_end" class="form-label">Fin de la Plage :</label>
+            <input type="number" step="any" name="range_end" id="range_end" class="form-control" required>
+            <div class="invalid-feedback">
+                Veuillez entrer une valeur de fin de plage.
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Calculer la Probabilité</button>
+    </form>
+
+    <a href="{% url 'analyse:home' %}" class="btn btn-secondary mt-3">Retour à l'accueil</a>
+
+    {% if probabilities %}
+        <h3 class="mt-5">Probabilités :</h3>
+        <ul class="list-group">
+            {% for column, probability in probabilities.items %}
+                <li class="list-group-item">{{ column }}: {{ probability|floatformat:2 }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <a href="{% url 'analyse:home' %}" class="btn btn-secondary mt-3">Retour à l'accueil</a>
+</div>
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Bootstrap form validation
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
+</script>
+</body>
+</html>
