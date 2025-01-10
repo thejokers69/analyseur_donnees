@@ -7,22 +7,22 @@
 *.mo
 __pycache__/
 db.sqlite3
-media/             # Ignore everything in media/
-uploads/           # Ignore everything in uploads/
+media/
+uploads/
 
 # Environment variables
-.env               # Environment file
+.env
 env/
 venv/
-config/settings_production.py  # Production-specific configurations
+config/settings_production.py
 
 # System specific
-.DS_Store          # macOS metadata
-Thumbs.db          # Windows metadata
-.git/index.lock    # Git lock file
+.DS_Store
+Thumbs.db
+.git/index.lock
 
 # Static files
-static/            # Ignore generated static files
+static/
 staticfiles/
 *.sass-cache/
 *.css.map
@@ -30,9 +30,9 @@ staticfiles/
 
 # IDE and editor settings
 *.sublime-*
-.idea/             # IntelliJ IDEA
-.vscode/           # VSCode
-*.swp              # Vim swap files
+.idea/ 
+.vscode/
+*.swp
 *.swo
 *.swn
 
@@ -72,10 +72,10 @@ pytestdebug.log
 
 # IPython/Jupyter Notebooks
 .ipynb_checkpoints/
-*.ipynb            # Ignore local Notebook files
+*.ipynb
 
 # SQL dump files
-*.sql              # Ignore SQL dump files
+*.sql
 
 # Log files
-*.log              # Ignore log files
+*.log
