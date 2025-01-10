@@ -1,0 +1,74 @@
+<!-- /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/templates/visualization_options.html -->
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Options de Visualisation</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'custom.css' %}">
+</head>
+<body>
+    <!-- Navbar -->
+    {% include 'navbar.html' %}
+    <div class="container mt-5">
+        <h2 class="mb-4 text-center">Options de Visualisation</h2>
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="columns" class="form-label">Sélectionner les Colonnes</label>
+                {% if columns %}
+                <select name="columns" id="columns" multiple class="form-select" required>
+                    {% for col in columns %}
+                    <option value="{{ col }}">{{ col }}</option>
+                    {% endfor %}
+                </select>
+                <div class="invalid-feedback">
+                    Veuillez sélectionner au moins une colonne.
+                </div>
+                {% else %}
+                <p class="text-danger">Aucune colonne disponible pour visualisation.</p>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <label for="visualization" class="form-label">Type de Visualisation</label>
+                <select name="visualization" id="visualization" class="form-select" required>
+                    <option value="" disabled selected>Choisir un type de visualisation</option>
+                    <option value="histogram">Histogramme</option>
+                    <option value="correlation_heatmap">Heatmap de Corrélation</option>
+                    <option value="scatter">Graphique de Dispersion</option>
+                    <option value="boxplot">Box Plot</option>
+                    <option value="barchart">Diagramme en Barres</option>
+                </select>
+                <div class="invalid-feedback">
+                    Veuillez sélectionner un type de visualisation.
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Générer la Visualisation</button>
+        </form>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Bootstrap form validation
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+    </script>
+</body>
+</html>
