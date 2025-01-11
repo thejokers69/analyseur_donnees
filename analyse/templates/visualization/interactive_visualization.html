@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Analyse de régression linéaire</h2>
+<form method="POST">
+  {% csrf_token %}
+  <label for="target_column">Colonne cible:</label>
+  <select name="target_column" required>
+    {% for column in numeric_columns %}
+    <option value="{{ column }}">{{ column }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="features">Colonnes des caractéristiques:</label>
+  <select name="features" multiple required>
+    {% for column in numeric_columns %}
+    <option value="{{ column }}">{{ column }}</option>
+    {% endfor %}
+  </select>
+
+  <button type="submit">Analyser</button>
+</form>
+
+{% if model_results %}
+<h3>Résultats de la régression linéaire</h3>
+<ul>
+  <li>Coefficients: {{ model_results.coefficients }}</li>
+  <li>Intercept: {{ model_results.intercept }}</li>
+  <li>MSE: {{ model_results.mean_squared_error }}</li>
+</ul>
+{% endif %}
+{% endblock %}

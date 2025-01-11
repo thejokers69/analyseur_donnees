@@ -1,43 +1,42 @@
 # /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/views.py
-import matplotlib
-import plotly.express as px
-
-matplotlib.use("Agg")
-import seaborn as sns
-import pandas as pd
-import matplotlib.pyplot as plt
-from io import BytesIO
-import base64
-from django.contrib.auth.models import User
-from .forms import EmailUpdateForm, UploadFileForm, AnalysisCustomizationForm
-from django.contrib import messages
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import UploadedFile, AnalysisHistory
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required
 import os
 import csv
-from django.http import HttpResponse
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from django.conf import settings
-from .utils import send_mailgun_email
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
-from django.core.mail import send_mail
-from .utils import load_data
 import logging
-from plotly.io import to_image
+import base64
+from io import BytesIO
+
+import pandas as pd
+import seaborn as sns
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from scipy.stats import kurtosis, skew
+from scipy.sparse import csr_array
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
-from scipy.stats import kurtosis, skew
-from django.http import JsonResponse
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from plotly.io import to_image
+import plotly.express as px
+
+from django.conf import settings
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.views.decorators.csrf import csrf_exempt
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from .forms import EmailUpdateForm, UploadFileForm, AnalysisCustomizationForm
+from .models import UploadedFile, AnalysisHistory
+from .utils import load_data
+
+
 
 logger = logging.getLogger(__name__)
-
 
 # Custom login views
 def custom_login(request):
@@ -61,6 +60,7 @@ def home(request):
     uploaded_files = None
     if request.user.is_authenticated:
         uploaded_files = UploadedFile.objects.filter(user=request.user)
+        logger.debug(f"Uploaded files for user {request.user.username}: {uploaded_files}")
         print(uploaded_files)
     return render(request, "workshop/home.html", {"uploaded_files": uploaded_files})
 
@@ -95,24 +95,9 @@ def profile(request):
     return render(request, "workshop/profile.html", {"form": form})
 
 
-# # Utility function to load data
-# def load_data(file_path):
-#     file_extension = os.path.splitext(file_path)[1].lower()
-#     try:
-#         if file_extension in [".xls", ".xlsx"]:
-#             return pd.read_excel(file_path, engine="openpyxl")
-#         elif file_extension == ".csv":
-#             return pd.read_csv(file_path)
-#         else:
-#             raise ValueError("Unsupported file format.")
-#     except Exception as e:
-#         raise ValueError(f"Error loading file: {e}")
-
-
 #  Vue Générique Exemple : some_view
 @login_required
 def some_view(request):
-
     some_id = request.GET.get("file_id")
     if not some_id:
         messages.error(request, "Aucun ID de fichier fourni.")
@@ -131,99 +116,61 @@ def some_view(request):
     return render(request, "template.html", context)
 
 
-# # Generate Histograms for each column
-# def generate_histogram(df, column_name):
-#     plt.figure()
-#     df[column_name].hist()
-#     plt.title(f"Histogram of {column_name}")
-#     plt.xlabel(column_name)
-#     plt.ylabel("Frequency")
-#     file_path = f"static/{column_name}_histogram.png"
-#     plt.savefig(file_path)
-#     plt.close()
-#     return file_path
-
-
 # Upload file view
 @login_required
 def upload_file(request):
-    global dataframe
     customization_form = None
-    if request.method == "POST":
-        try:
-            form = UploadFileForm(request.POST, request.FILES)
-            if form.is_valid():
-                uploaded_file = form.save(commit=False)
-                uploaded_file.user = request.user
-                uploaded_file.save()
+    dataframe = None
 
-                # Validate file size
+    if request.method == "POST":
+        form = UploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            uploaded_file = form.save(commit=False)
+            uploaded_file.user = request.user
+            uploaded_file.save()
+
+            try:
+                # Validation de la taille du fichier
                 if uploaded_file.file.size > 10 * 1024 * 1024:  # 10 MB
                     messages.error(request, "File size exceeds 10 MB.")
                     uploaded_file.delete()
-                    return JsonResponse(
-                        {"error": "File size exceeds 10 MB."}, status=400
-                    )
+                    return redirect("analyse:upload")
 
-                # Validate and process file type
+                # Traitement du fichier
                 file_extension = os.path.splitext(uploaded_file.file.name)[1].lower()
-                try:
-                    if file_extension in [".xls", ".xlsx"]:
-                        dataframe = pd.read_excel(
-                            uploaded_file.file.path, engine="openpyxl"
-                        )
-                    elif file_extension == ".csv":
-                        dataframe = pd.read_csv(uploaded_file.file.path)
-                    else:
-                        messages.error(request, "Unsupported file format.")
-                        uploaded_file.delete()
-                        return JsonResponse(
-                            {"error": "Unsupported file format."}, status=400
-                        )
-                except Exception as file_error:
-                    logger.error(f"File processing error: {str(file_error)}")
-                    messages.error(
-                        request, "Failed to process the file. Please check the format."
-                    )
+                if file_extension in [".xls", ".xlsx"]:
+                    dataframe = pd.read_excel(uploaded_file.file.path, engine="openpyxl")
+                elif file_extension == ".csv":
+                    dataframe = pd.read_csv(uploaded_file.file.path)
+                else:
+                    messages.error(request, "Unsupported file format.")
                     uploaded_file.delete()
-                    return JsonResponse(
-                        {
-                            "error": "Failed to process the file. Please check the format."
-                        },
-                        status=400,
-                    )
+                    return redirect("analyse:upload")
 
-                # Store file details in session for further use
+                # Stockage des colonnes dans la session pour la personnalisation
                 request.session["uploaded_file_id"] = uploaded_file.id
                 request.session["columns"] = dataframe.columns.tolist()
-                request.session["dataframe"] = dataframe.to_json()
+                messages.success(request, f"File '{uploaded_file.file.name}' uploaded successfully.")
 
-                # Initialize the customization form with column names
-                customization_form = AnalysisCustomizationForm(
-                    columns=dataframe.columns
-                )
-                messages.success(
-                    request, f"File '{uploaded_file.file.name}' uploaded successfully."
-                )
-                return JsonResponse({"success": True}, status=200)
-            else:
-                messages.error(request, "Invalid form submission. Please try again.")
-                return JsonResponse(
-                    {"error": "Invalid form submission. Please try again."}, status=400
-                )
-        except Exception as e:
-            logger.error(f"Unexpected error during file upload: {str(e)}")
-            messages.error(request, "An unexpected error occurred. Please try again.")
-            return JsonResponse(
-                {"error": "An unexpected error occurred. Please try again."}, status=500
-            )
+                # Initialisation du formulaire de personnalisation
+                customization_form = AnalysisCustomizationForm(columns=dataframe.columns)
+            except Exception as e:
+                messages.error(request, f"An error occurred while processing the file: {str(e)}")
+                uploaded_file.delete()
+                return redirect("analyse:upload")
+        else:
+            messages.error(request, "Invalid form submission. Please try again.")
+
     else:
         form = UploadFileForm()
 
     return render(
         request,
         "workshop/upload.html",
-        {"form": form, "customization_form": customization_form},
+        {
+            "form": form,
+            "customization_form": customization_form,
+        },
     )
 
 
@@ -258,6 +205,7 @@ def results(request, file_id):
         "range_values": range_values.to_dict(),
         "skewness": skewness.to_dict(),
         "kurtosis": kurtosis_values.to_dict(),
+        "file_id": file_id,
     }
     return render(request, "workshop/results.html", context)
 
@@ -335,34 +283,6 @@ def download_pdf(request, analysis_id):
     pdf.save()
 
     return response
-
-
-# Notifications by email address and password
-def send_analysis_completed_email(recipient_email, file_name):
-    subject = "Analyse Terminée"
-    message = f"Votre analyse pour {file_name} est terminée. Vous pouvez télécharger les résultats depuis votre tableau de bord."
-    email_from = settings.DEFAULT_FROM_EMAIL
-    recipient_list = [recipient_email]
-
-    logger.debug(f"EMAIL_FROM: {email_from}")
-    logger.debug(f"RECIPIENT_LIST: {recipient_list}")
-
-    if not email_from or not recipient_list:
-        logger.error("Email configuration is not properly set.")
-        raise ValueError("Email configuration is not properly set.")
-
-    try:
-        # Envoi via SMTP
-        send_mail(subject, message, email_from, recipient_list)
-        logger.info(f"Email envoyé via SMTP à {recipient_email}")
-
-        # Envoi via Mailgun (optionnel)
-        send_mailgun_email(subject, message, recipient_email)
-        logger.info(f"Email envoyé via Mailgun à {recipient_email}")
-    except Exception as e:
-        logger.error(f"Erreur lors de l'envoi de l'email: {e}")
-        raise
-
 
 # Data table
 @login_required
@@ -631,9 +551,6 @@ def customize_analysis(request, file_id):
                 status=AnalysisHistory.Status.COMPLETED,
             )
             analysis.save()
-
-            send_analysis_completed_email(request.user.email, uploaded_file.file.name)
-
             return render(
                 request,
                 "analysis/analysis_results.html",
@@ -953,3 +870,4 @@ def update_cell(request, file_id):
         df.to_csv(uploaded_file.file.path, index=False)
         return JsonResponse({"status": "success"})
     return JsonResponse({"status": "error", "message": "Invalid request."})
+
