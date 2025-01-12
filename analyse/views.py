@@ -24,7 +24,7 @@ from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.views.decorators.csrf import csrf_exempt
@@ -35,7 +35,15 @@ from .models import UploadedFile, AnalysisHistory
 from .utils import load_data
 from django.views.decorators.http import require_http_methods
 from .utils import calculate_statistics
-
+from .utils import (
+    correlation_analysis,
+    linear_regression_analysis,
+    probability_analysis,
+    interactive_visualization,
+    download_csv,
+    download_pdf,
+)
+import pandas as pd
 logger = logging.getLogger(__name__)
 
 # Custom login views
@@ -895,3 +903,93 @@ def delete_file(request, file_id):
     except Exception as e:
         logger.error(f"Error deleting file: {str(e)}")
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
+#Houssam aoun (Sa partie)
+# Example View for Correlation Analysis
+@login_required
+def correlation_view(request, file_id):
+    uploaded_file = get_object_or_404(UploadedFile, id=file_id, user=request.user)
+    file_path = uploaded_file.file.path
+
+    try:
+        if file_path.endswith(".csv"):
+            df = pd.read_csv(file_path)
+        elif file_path.endswith(".xlsx"):
+            df = pd.read_excel(file_path, engine="openpyxl")
+        else:
+            raise ValueError("Unsupported file format.")
+        
+        col1 = request.GET.get("col1")
+        col2 = request.GET.get("col2")
+        result = correlation_analysis(df, col1, col2)
+
+    except Exception as e:
+        messages.error(request, f"Error: {str(e)}")
+        return redirect("analyse:upload")
+
+    return JsonResponse(result)
+
+# Example View for Interactive Visualization
+def visualization_view(request):
+    data = pd.read_csv("path_to_your_csv_file.csv")
+    x = request.GET.get("x")
+    y = request.GET.get("y")
+    chart_type = request.GET.get("chart_type", "scatter")
+    html_chart = interactive_visualization(data, x, y, chart_type)
+    return HttpResponse(html_chart)
+
+# Example View for Exporting CSV
+@login_required
+def export_csv_view(request, file_id):
+    uploaded_file = get_object_or_404(UploadedFile, id=file_id, user=request.user)
+    file_path = uploaded_file.file.path
+
+    try:
+        if file_path.endswith(".csv"):
+            df = pd.read_csv(file_path)
+        elif file_path.endswith(".xlsx"):
+            df = pd.read_excel(file_path, engine="openpyxl")
+        else:
+            raise ValueError("Unsupported file format.")
+
+        csv_buffer = download_csv(df)
+
+    except Exception as e:
+        messages.error(request, f"Error: {str(e)}")
+        return redirect("analyse:upload")
+
+    response = HttpResponse(csv_buffer, content_type="text/csv")
+    response["Content-Disposition"] = "attachment; filename=export.csv"
+    return response
+
+# Example View for Exporting PDF
+def export_pdf_view(request):
+    data = pd.read_csv("path_to_your_csv_file.csv")
+    pdf = download_pdf(data)
+    response = HttpResponse(pdf.output(dest="S").encode("latin1"), content_type="application/pdf")
+    response["Content-Disposition"] = "attachment; filename=output.pdf"
+    return response
+
+# view of interactive visualization
+@login_required
+def interactive_visualization_view(request, file_id):
+    uploaded_file = get_object_or_404(UploadedFile, id=file_id, user=request.user)
+    file_path = uploaded_file.file.path
+
+    try:
+        if file_path.endswith(".csv"):
+            df = pd.read_csv(file_path)
+        elif file_path.endswith(".xlsx"):
+            df = pd.read_excel(file_path, engine="openpyxl")
+        else:
+            raise ValueError("Unsupported file format.")
+        
+        x = request.GET.get("x")
+        y = request.GET.get("y")
+        chart_type = request.GET.get("chart_type", "scatter")
+        html_chart = interactive_visualization(df, x, y, chart_type)
+
+    except Exception as e:
+        messages.error(request, f"Error: {str(e)}")
+        return redirect("analyse:upload")
+
+    return HttpResponse(html_chart)

@@ -2,7 +2,6 @@
 
 from django.urls import path
 from . import views
-from analyse import views as analyse_views
 from django.contrib.auth import views as auth_views
 
 app_name = "analyse"
@@ -49,4 +48,12 @@ urlpatterns = [
         name="delete_analysis",
     ),
     path("delete_file/<int:file_id>/", views.delete_file, name="delete_file"),
+    path("correlation_analysis/", views.correlation_view, name="correlation_view"),
+    path("visualization/", views.visualization_view, name="visualization"),
+    path("export/csv/", views.export_csv_view, name="export_csv"),
+    path("export/pdf/", views.export_pdf_view, name="export_pdf"),
+    path("correlation/", views.correlation_view, name="correlation"),
+    path("visualization/", views.visualization_view, name="visualization"),
+    path("export/csv/", views.export_csv_view, name="export_csv"),
+    path("export/pdf/", views.export_pdf_view, name="export_pdf"),
 ]
