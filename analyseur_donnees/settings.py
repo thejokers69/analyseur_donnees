@@ -10,7 +10,7 @@ MESSAGE_STORAGE = "django.contrib.messages.storage.session.SessionStorage"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -88,7 +88,7 @@ DATABASES = {
         "USER": os.getenv("DB_USER", "thejoker"),
         "PASSWORD": os.getenv("DB_PASSWORD", "sexcigarez2"),
         "HOST": os.getenv("DB_HOST", "localhost"),
-        "PORT": os.getenv("DB_PORT", "5432"),
+        "PORT": os.getenv("DB_PORT", "5443"),
         "OPTIONS": {"options": "-c search_path=public"},
     }
 }
@@ -154,10 +154,8 @@ EMAIL_HOST_PASSWORD = '2f7e72509c4996f404cafb0dee660230-da554c25-a1ca5ab7'
 DEFAULT_FROM_EMAIL = 'brad@sandbox4b7f749321b54e59b9aac9acc0899e45.mailgun.org'
 
 # Mdeia files configurations
-# MEDIA_URL = "/uploads/"
-# MEDIA_ROOT = os.path.join(BASE_DIR, "uploads")
-MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
-MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads/')
+MEDIA_URL = '/uploads/'
 
 # Logging configurations
 LOGGING = {

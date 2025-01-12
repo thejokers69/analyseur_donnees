@@ -46,8 +46,7 @@
           <form method="post" class="mt-4">
             {% csrf_token %}
             <div class="mb-3">
-              {{ form.email.label_tag }} {{ form.email|add_class:"form-control"
-              }} {% if form.email.errors %}
+              {{ form.email.label_tag }} {{ form.email|add_class:"form-control" }} {% if form.email.errors %}
               <div class="text-danger mt-1">
                 {% for error in form.email.errors %} {{ error }} {% endfor %}
               </div>

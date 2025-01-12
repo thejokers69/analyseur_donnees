@@ -47,9 +47,9 @@ class AnalysisHistory(models.Model):
     status = models.CharField(
         max_length=10, choices=Status.choices, default=Status.PENDING
     )
-    execution_time = models.DurationField(null=True, blank=True)  # New field
-    notes = models.TextField(null=True, blank=True)  # New field
-    error_log = models.TextField(null=True, blank=True)  # New field
+    execution_time = models.DurationField(null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    error_log = models.TextField(null=True, blank=True)
 
     class Meta:
         verbose_name = _("Analysis History")

@@ -33,8 +33,8 @@ from django.core.files.base import ContentFile
 from .forms import EmailUpdateForm, UploadFileForm, AnalysisCustomizationForm
 from .models import UploadedFile, AnalysisHistory
 from .utils import load_data
-
-
+from django.views.decorators.http import require_http_methods
+from .utils import calculate_statistics
 
 logger = logging.getLogger(__name__)
 
@@ -138,18 +138,33 @@ def upload_file(request):
 
                 # Traitement du fichier
                 file_extension = os.path.splitext(uploaded_file.file.name)[1].lower()
-                if file_extension in [".xls", ".xlsx"]:
-                    dataframe = pd.read_excel(uploaded_file.file.path, engine="openpyxl")
-                elif file_extension == ".csv":
-                    dataframe = pd.read_csv(uploaded_file.file.path)
-                else:
-                    messages.error(request, "Unsupported file format.")
+                try:
+                    if file_extension in [".xls", ".xlsx"]:
+                        dataframe = pd.read_excel(uploaded_file.file.open(), engine="openpyxl")
+                    elif file_extension == ".csv":
+                        dataframe = pd.read_csv(uploaded_file.file.open())
+                    else:
+                        raise ValueError("Unsupported file format.")
+                except ValueError as ve:
+                    messages.error(request, str(ve))
+                    uploaded_file.delete()
+                    return redirect("analyse:upload")
+                except pd.errors.EmptyDataError:
+                    messages.error(request, "The file is empty.")
+                    uploaded_file.delete()
+                    return redirect("analyse:upload")
+                except pd.errors.ParserError:
+                    messages.error(request, "Error parsing the file.")
+                    uploaded_file.delete()
+                    return redirect("analyse:upload")
+                except Exception as e:
+                    logger.error(f"Unexpected error during file processing: {str(e)}")
+                    messages.error(request, "An unexpected error occurred. Please try again.")
                     uploaded_file.delete()
                     return redirect("analyse:upload")
 
                 # Stockage des colonnes dans la session pour la personnalisation
-                request.session["uploaded_file_id"] = uploaded_file.id
-                request.session["columns"] = dataframe.columns.tolist()
+                request.session[f"columns_{uploaded_file.id}"] = dataframe.columns.tolist()
                 messages.success(request, f"File '{uploaded_file.file.name}' uploaded successfully.")
 
                 # Initialisation du formulaire de personnalisation
@@ -179,6 +194,8 @@ def results(request, file_id):
     uploaded_file = get_object_or_404(UploadedFile, id=file_id)
     file_path = uploaded_file.file.path
 
+    logger.debug(f"Processing file: {file_path}")
+
     if file_path.endswith(".csv"):
         df = pd.read_csv(file_path)
     elif file_path.endswith((".xls", ".xlsx")):
@@ -187,26 +204,21 @@ def results(request, file_id):
         messages.error(request, "Unsupported file format.")
         return redirect("analyse:upload")
 
-    mean = df.mean()
-    median = df.median()
-    mode = df.mode().iloc[0] if not df.mode().empty else None
-    variance = df.var()
-    std_dev = df.std()
-    range_values = df.max() - df.min()
-    skewness = df.apply(lambda x: skew(x.dropna()), axis=0)
-    kurtosis_values = df.apply(lambda x: kurtosis(x.dropna()), axis=0)
+    logger.debug("Calculating statistics")
+    stats = calculate_statistics(df)
 
     context = {
-        "mean": mean.to_dict(),
-        "median": median.to_dict(),
-        "mode": mode.to_dict() if mode is not None else None,
-        "variance": variance.to_dict(),
-        "std_dev": std_dev.to_dict(),
-        "range_values": range_values.to_dict(),
-        "skewness": skewness.to_dict(),
-        "kurtosis": kurtosis_values.to_dict(),
+        "mean": stats["mean"],
+        "median": stats["median"],
+        "mode": stats.get("mode", {}),
+        "std_dev": stats["std_dev"],
         "file_id": file_id,
+        "variance": stats.get("variance", {}),
+        "range": stats.get("range", {}),
+        "coefficient_of_variation": stats.get("coefficient_of_variation", {}),
+        "histograms": stats.get("histograms", {}),
     }
+    logger.debug(f"Context: {context}")
     return render(request, "workshop/results.html", context)
 
 
@@ -584,7 +596,6 @@ def preview_file(request, file_id):
         request, "preview/preview.html", {"data": data_html, "file_id": file_id}
     )
 
-
 # Delete analysis
 @login_required
 def delete_analysis(request, analysis_id):
@@ -871,3 +882,16 @@ def update_cell(request, file_id):
         return JsonResponse({"status": "success"})
     return JsonResponse({"status": "error", "message": "Invalid request."})
 
+
+
+# Delete file uploaded
+@require_http_methods(["DELETE"])
+@login_required
+def delete_file(request, file_id):
+    try:
+        uploaded_file = get_object_or_404(UploadedFile, id=file_id, user=request.user)
+        uploaded_file.delete()
+        return JsonResponse({"status": "success"})
+    except Exception as e:
+        logger.error(f"Error deleting file: {str(e)}")
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)

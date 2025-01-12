@@ -29,33 +29,24 @@
                     {% endfor %}
                 {% endif %}
                 
-                <!-- Drag-and-Drop Area -->
-                <div id="drop-area" class="border border-primary p-5 text-center">
-                    <p>Déposez vos fichiers ici ou cliquez pour télécharger</p>
-                    <input type="file" id="fileElem" multiple accept=".csv, .xls, .xlsx" class="d-none">
-                    <label class="btn btn-primary" for="fileElem">Sélectionner des fichiers</label>
-                </div>
-
-                <!-- Progress Bar -->
-                <div class="progress mt-3">
-                    <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%;">0%</div>
-                </div>
-
                 <!-- Formulaire de Téléchargement -->
-                <form id="upload-form" method="post" enctype="multipart/form-data" class="mt-4 d-none">
+                <form id="upload-form" method="post" enctype="multipart/form-data" class="mt-4">
                     {% csrf_token %}
-                    <div class="mb-3">
-                        {{ form.file.label_tag }}
-                        {{ form.file|add_class:"form-control" }}
-                        {% if form.file.errors %}
-                            <div class="text-danger mt-1">
-                                {% for error in form.file.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
+                    <!-- Drag-and-Drop Area -->
+                    <div id="drop-area" class="border border-primary p-5 text-center">
+                        <p>Déposez vos fichiers ici ou cliquez pour télécharger</p>
+                        <input type="file" id="fileElem" name="file" multiple accept=".csv, .xls, .xlsx" class="d-none">
+                        <label class="btn btn-primary" for="fileElem">Sélectionner des fichiers</label>
+                        <p id="file-name" class="mt-3"></p>
                     </div>
-                    <button type="submit" name="upload_submit" class="btn btn-primary w-100">Télécharger</button>
+
+                    <!-- Progress Bar -->
+                    <div class="progress mt-3">
+                        <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%;">0%</div>
+                    </div>
+
+                    <!-- Button to Upload -->
+                    <button type="submit" name="upload_submit" class="btn btn-primary w-100 mt-3">Télécharger</button>
                 </form>
                 
                 <!-- Formulaire de Personnalisation de l'Analyse -->

@@ -90,8 +90,13 @@
               >
               <a
                 href="{% url 'analyse:visualization_options' file.id %}"
-                class="btn btn-sm btn-primary"
+                class="btn btn-sm btn-primary me-2"
                 >Visualisation</a
+              >
+              <button
+                class="btn btn-sm btn-danger"
+                onclick="deleteFile({{ file.id }})"
+                >Supprimer</button
               >
             </td>
           </tr>
@@ -134,6 +139,28 @@
           },
         });
       });
+
+      function deleteFile(fileId) {
+        if (confirm("Êtes-vous sûr de vouloir supprimer ce fichier ?")) {
+          fetch(`/delete_file/${fileId}/`, {
+            method: "DELETE",
+            headers: {
+              "X-CSRFToken": "{{ csrf_token }}",
+            },
+          })
+            .then((response) => {
+              if (response.ok) {
+                location.reload();
+              } else {
+                alert("Une erreur est survenue lors de la suppression du fichier.");
+              }
+            })
+            .catch((error) => {
+              console.error("Erreur:", error);
+              alert("Une erreur est survenue lors de la suppression du fichier.");
+            });
+        }
+      }
     </script>
   </body>
 </html>

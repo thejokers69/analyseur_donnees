@@ -6,7 +6,7 @@ import requests
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 import logging
-
+from .visualization_utils import create_histogram
 logger = logging.getLogger(__name__)
 
 # Load data 
@@ -22,37 +22,24 @@ def load_data(file_path):
     except Exception as e:
         raise ValueError(f"Error loading file: {e}")
 
-# Email addresses
-def send_mailgun_email(subject: str, text: str, recipient_email: str) -> bool:
-    """
-    Envoie un email en utilisant l'API Mailgun.
+# Calculate statistics
+def calculate_statistics(df):
+    mean = df.mean().to_dict()
+    median = df.median().to_dict()
+    mode = df.mode().iloc[0].to_dict()
+    std_dev = df.std().to_dict()
+    variance = df.var().to_dict()
+    range_values = (df.max() - df.min()).to_dict()
+    coefficient_of_variation = (df.std() / df.mean()).to_dict()
+    histograms = {col: create_histogram(df, col) for col in df.columns if pd.api.types.is_numeric_dtype(df[col])}
 
-    :param subject: Sujet de l'email.
-    :param text: Corps de l'email.
-    :param recipient_email: Adresse email du destinataire.
-    :return: True si l'email a été envoyé avec succès, False sinon.
-    :raises ImproperlyConfigured: Si MAILGUN_DOMAIN ou MAILGUN_API_KEY n'est pas défini.
-    """
-    mailgun_domain = getattr(settings, 'MAILGUN_DOMAIN', None)
-    mailgun_api_key = getattr(settings, 'MAILGUN_API_KEY', None)
-
-    if not mailgun_domain or not mailgun_api_key:
-        raise ImproperlyConfigured("Les paramètres Mailgun MAILGUN_DOMAIN et MAILGUN_API_KEY doivent être définis.")
-
-    try:
-        response = requests.post(
-            f"https://api.mailgun.net/v3/{mailgun_domain}/messages",
-            auth=("api", mailgun_api_key),
-            data={
-                "from": f"Excited User <{settings.DEFAULT_FROM_EMAIL}>",
-                "to": [recipient_email],
-                "subject": subject,
-                "text": text,
-            },
-            timeout=10,  # secondes
-        )
-        response.raise_for_status()
-        return True
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Échec de l'envoi de l'email via Mailgun : {e}")
-        return False
+    return {
+        "mean": mean,
+        "median": median,
+        "mode": mode,
+        "std_dev": std_dev,
+        "variance": variance,
+        "range": range_values,
+        "coefficient_of_variation": coefficient_of_variation,
+        "histograms": histograms,
+    }

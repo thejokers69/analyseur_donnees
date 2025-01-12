@@ -9,6 +9,15 @@ class UploadFileForm(forms.ModelForm):
     class Meta:
         model = UploadedFile
         fields = ["file"]
+    def clean_file(self):
+        uploaded_file = self.cleaned_data["file"]
+        if uploaded_file.size > 10 * 1024 * 1024:
+            raise forms.ValidationError("File size exceeds 10 MB.")
+        if not uploaded_file.name.lower().endswith((".csv", ".xls", ".xlsx")):
+            raise forms.ValidationError("Unsupported file format.")
+        if uploaded_file.size ==0:
+            raise forms.ValidationError("The file es empty.")
+        return uploaded_file
 
 
 class CustomizationForm(forms.Form):

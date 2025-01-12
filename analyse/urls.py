@@ -1,4 +1,5 @@
 # /Users/thejoker/Documents/GitHub/analyseur_donnees/analyse/urls.py
+
 from django.urls import path
 from . import views
 from analyse import views as analyse_views
@@ -47,4 +48,5 @@ urlpatterns = [
         views.delete_analysis,
         name="delete_analysis",
     ),
+    path("delete_file/<int:file_id>/", views.delete_file, name="delete_file"),
 ]
