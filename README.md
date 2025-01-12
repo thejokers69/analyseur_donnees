@@ -82,17 +82,13 @@ Créer un outil convivial et fonctionnel pour analyser des données et produire 
         }
     }
     ```
-     Exemple dans `settings.py` pour PostgreSQL :
+    Exemple dans `settings.py` pour SQLite :
 
     ```python
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'votre_nom_de_bd',
-            'USER': 'votre_utilisateur',
-            'PASSWORD': 'votre_mot_de_passe',
-            'HOST': 'localhost',
-            'PORT': '5432',
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         }
     }
     ```
