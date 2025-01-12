@@ -37,6 +37,8 @@ Créer un outil convivial et fonctionnel pour analyser des données et produire 
 - `pip` (gestionnaire de paquets Python)
 - Django 5.0+
 - Bibliothèques supplémentaires : `pandas`, `matplotlib`, `seaborn`, `openpyxl`, `reportlab`
+- Base de donnée SQLite ou PostgreSQL
+- Git installé sur le système
 
 ### Étapes d’installation
 
@@ -54,10 +56,11 @@ Créer un outil convivial et fonctionnel pour analyser des données et produire 
     ```
 
 3. **Configurez les paramètres du projet :**
-
-    - Créez un fichier `.env` ou configurez directement dans `settings.py` :
+   
+    - Créez un fichier `.env` dans le répertoire racine du projet et ajoutez les paramètres nécessaires.
+    - Alternativement, vous pouvez configurer directement dans `settings.py` :
       - `SECRET_KEY`, `DEBUG`, `STATIC_ROOT`, `MEDIA_ROOT`
-    - Configurez les paramètres de Mailgun pour les notifications par e-mail.
+    - Assurez-vous que les paramètres de la base de données sont correctement configurés.
 
     Exemple dans `settings.py` :
 
@@ -65,26 +68,54 @@ Créer un outil convivial et fonctionnel pour analyser des données et produire 
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
     MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
     ```
+    Exemple dans `settings.py` pour PostgreSQL :
 
-4. **Exécutez les migrations :**
+    ```python
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'votre_nom_de_bd',
+            'USER': 'votre_utilisateur',
+            'PASSWORD': 'votre_mot_de_passe',
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
+    }
+    ```
+     Exemple dans `settings.py` pour PostgreSQL :
+
+    ```python
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'votre_nom_de_bd',
+            'USER': 'votre_utilisateur',
+            'PASSWORD': 'votre_mot_de_passe',
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
+    }
+    ```
+
+5. **Exécutez les migrations :**
 
     ```bash
     python manage.py migrate
     ```
 
-5. **Collectez les fichiers statiques :**
+6. **Collectez les fichiers statiques :**
 
     ```bash
     python manage.py collectstatic
     ```
 
-6. **Créez un superutilisateur :**
+7. **Créez un superutilisateur :**
 
     ```bash
     python manage.py createsuperuser
     ```
 
-7. **Lancez le serveur local :**
+8. **Lancez le serveur local :**
 
     ```bash
     python manage.py runserver
