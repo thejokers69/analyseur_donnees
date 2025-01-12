@@ -9,7 +9,7 @@
 5. [📊 Exemples de Code](#-exemples-de-code)
 6. [👥 Contributeurs](#-contributeurs)
 7. [🤝 Contribution](#-contribution)
-8. [🚀 Améliorations Futures](#-améliorations-futures)
+8. [📸 Captures d'écran](#-captures-d'écran)
 
 ---
 
@@ -238,15 +238,48 @@ def upload_file(request):
 
 4. **Ouvrez une Pull Request pour révision.**
 
----
 
-## 🚀 Améliorations Futures
+## 📸 Captures d'écran
 
-- **Analyse Avancée :**
-  - Ajouter des régressions multivariées et des outils de machine learning pour la prédiction.
-- **Internationalisation (i18n) :**
-  - Support pour plusieurs langues via les fonctionnalités d’internationalisation de Django.
-- **Application Mobile :**
-  - Développer une Progressive Web App (PWA).
-- **Améliorations UI/UX :**
-  - Ajouter des animations et des effets visuels modernes.
+#### Page de Connexion
+
+![Connexion](Captures/Connexion.png)
+
+#### Page d'Accueil
+
+![Home](Captures/Home.png)
+
+#### Options de Visualisation
+
+![Option de Visualisation](Captures/Option-of-visualization.png)
+
+#### Page de Profil
+
+![Profil](Captures/Profile.png)
+
+#### Page d'Inscription
+
+![Register](Captures/Register.png)
+
+#### Résultats d'Analyse - Partie 1
+
+![Résultats 1](Captures/Resultats1.png)
+![Résultats 1 - Visualisations](Captures/Resultats1ofvisualizations.png)
+
+#### Résultats d'Analyse - Partie 2
+
+![Résultats 2](Captures/Resultats2.png)
+![Résultats 2 - Visualisations](Captures/Resultats2ofvisualizations.png)
+
+#### Résultats d'Analyse - Partie 3
+
+![Résultats 3](Captures/Resultats3.png)
+![Résultats 3 - Visualisations](Captures/Resultats3ofvisualizations.png)
+
+#### Téléchargement Réussi
+
+![Téléchargement Réussi](Captures/Upload-succed.png)
+
+#### Page de Téléchargement
+
+![Téléchargements](Captures/Uploads.png)
