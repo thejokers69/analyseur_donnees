@@ -83,11 +83,11 @@
                 class="btn btn-sm btn-info me-2"
                 >Voir Résultats</a
               >
-              <a
+              {% comment %} <a
                 href="{% url 'analyse:correlation_analysis' file.id %}"
                 class="btn btn-sm btn-warning me-2"
                 >Analyse Corrélation</a
-              >
+              > {% endcomment %}
               <a
                 href="{% url 'analyse:visualization_options' file.id %}"
                 class="btn btn-sm btn-primary me-2"

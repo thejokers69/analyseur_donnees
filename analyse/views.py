@@ -4,9 +4,10 @@ import csv
 import logging
 import base64
 from io import BytesIO
-
+from scipy import stats 
 import pandas as pd
 import seaborn as sns
+import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -19,7 +20,8 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from plotly.io import to_image
 import plotly.express as px
-
+from django.shortcuts import render, get_object_or_404
+from .visualization_utils import create_correlation_heatmap, create_regression_plot
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -36,14 +38,15 @@ from .utils import load_data
 from django.views.decorators.http import require_http_methods
 from .utils import calculate_statistics
 from .utils import (
-    correlation_analysis,
+    # correlation_analysis,
     linear_regression_analysis,
     probability_analysis,
     interactive_visualization,
     download_csv,
     download_pdf,
 )
-import pandas as pd
+from scipy.stats import pearsonr
+from django.http import Http404
 logger = logging.getLogger(__name__)
 
 # Custom login views
@@ -183,6 +186,8 @@ def upload_file(request):
                 return redirect("analyse:upload")
         else:
             messages.error(request, "Invalid form submission. Please try again.")
+            logger.debug(f"Form errors: {form.errors}")
+
 
     else:
         form = UploadFileForm()
@@ -198,47 +203,106 @@ def upload_file(request):
 
 
 # Results view
+@login_required
 def results(request, file_id):
-    uploaded_file = get_object_or_404(UploadedFile, id=file_id)
-    file_path = uploaded_file.file.path
+    try:
+        uploaded_file = get_object_or_404(UploadedFile, id=file_id)
+        file_path = uploaded_file.file.path
 
-    logger.debug(f"Processing file: {file_path}")
+        # Load the file based on its format
+        if file_path.endswith(".csv"):
+            df = pd.read_csv(file_path)
+        elif file_path.endswith((".xls", ".xlsx")):
+            df = pd.read_excel(file_path, engine="openpyxl")
+        else:
+            messages.error(request, "Unsupported file format.")
+            return redirect("analyse:upload")
 
-    if file_path.endswith(".csv"):
-        df = pd.read_csv(file_path)
-    elif file_path.endswith((".xls", ".xlsx")):
-        df = pd.read_excel(file_path, engine="openpyxl")
-    else:
-        messages.error(request, "Unsupported file format.")
+        # Calculate statistics
+        stats = calculate_statistics(df)
+
+        # Identify numeric columns
+        numeric_cols = df.select_dtypes(include="number").columns
+        correlation_results = {}
+        for col1 in numeric_cols:
+            for col2 in numeric_cols:
+                if col1 != col2:
+                    corr, _ = pearsonr(df[col1], df[col2])
+                    correlation_results[f"{col1} vs {col2}"] = round(corr, 2)
+
+        # Linear regression (optional, based on numeric column availability)
+        linear_regression_results = {}
+        if len(numeric_cols) >= 2:
+            X = df[numeric_cols[0]].values.reshape(-1, 1)
+            y = df[numeric_cols[1]].values
+            model = LinearRegression()
+            model.fit(X, y)
+            linear_regression_results = {
+                "coefficient": model.coef_[0],
+                "intercept": model.intercept_,
+            }
+
+        # Handle custom analysis form
+        custom_analysis = None
+        if request.method == "POST":
+            x_column = request.POST.get("x_column")
+            y_column = request.POST.get("y_column")
+            if x_column in numeric_cols and y_column in numeric_cols:
+                corr, _ = pearsonr(df[x_column], df[y_column])
+                custom_analysis = {
+                    "x_column": x_column,
+                    "y_column": y_column,
+                    "correlation": round(corr, 2),
+                }
+            else:
+                custom_analysis = {"error": "Invalid columns selected for analysis."}
+
+        # Context for the template
+        context = {
+            "mean": stats["mean"],
+            "median": stats["median"],
+            "mode": stats.get("mode", {}),
+            "std_dev": stats["std_dev"],
+            "file_id": file_id,
+            "variance": stats.get("variance", {}),
+            "range": stats.get("range", {}),
+            "correlation_results": correlation_results,
+            "linear_regression_results": linear_regression_results,
+            "histograms": stats.get("histograms", {}),
+            "custom_analysis": custom_analysis,
+            "numeric_cols": numeric_cols,
+        }
+        return render(request, "workshop/results.html", context)
+
+    except Exception as e:
+        logger.error(f"Error in results view: {e}")
+        messages.error(request, "An error occurred while processing the file.")
         return redirect("analyse:upload")
 
-    logger.debug("Calculating statistics")
-    stats = calculate_statistics(df)
 
-    context = {
-        "mean": stats["mean"],
-        "median": stats["median"],
-        "mode": stats.get("mode", {}),
-        "std_dev": stats["std_dev"],
-        "file_id": file_id,
-        "variance": stats.get("variance", {}),
-        "range": stats.get("range", {}),
-        "coefficient_of_variation": stats.get("coefficient_of_variation", {}),
-        "histograms": stats.get("histograms", {}),
-    }
-    logger.debug(f"Context: {context}")
-    return render(request, "workshop/results.html", context)
 
 
 # Analysis History view
 @login_required
 def analysis_history(request):
-    user_analyses = AnalysisHistory.objects.filter(user=request.user).order_by(
-        "-upload_date"
-    )
-    return render(
-        request, "analysis/analysis_history.html", {"user_analyses": user_analyses}
-    )
+    try:
+        user_analyses = AnalysisHistory.objects.filter(user=request.user).order_by(
+            "-upload_date"
+        )
+        # Vérifie que tous les champs JSON sont bien sérialisables
+        for analysis in user_analyses:
+            if not isinstance(analysis.mean, dict):
+                analysis.mean = {}  # Valeur par défaut
+            if not isinstance(analysis.median, dict):
+                analysis.median = {}
+            # Ajoute d'autres validations si nécessaire
+        return render(
+            request, "analysis/analysis_history.html", {"user_analyses": user_analyses}
+        )
+    except Exception as e:
+        logger.error(f"Erreur dans analysis_history: {str(e)}")
+        messages.error(request, "Une erreur est survenue.")
+        return redirect("analyse:home")
 
 
 # Download CSV
@@ -325,63 +389,157 @@ def data_table_view(request, file_id):
         request, "visualization/data_table.html", {"data": data, "columns": columns}
     )
 
-
-# Correlation and regression analysis
+# correlation and regression visualization
 @login_required
-def correlation_analysis(request, file_id):
-    uploaded_file = get_object_or_404(UploadedFile, id=file_id)
-    file_path = uploaded_file.file.path
+def correlation_and_regression_visualization(request, file_id):
+    try:
+        # Fetch the uploaded file
+        uploaded_file = get_object_or_404(UploadedFile, id=file_id, user=request.user)
+        file_path = uploaded_file.file.path
 
-    if file_path.endswith(".csv"):
-        df = pd.read_csv(file_path)
-    elif file_path.endswith((".xls", ".xlsx")):
-        df = pd.read_excel(file_path, engine="openpyxl")
-    else:
-        messages.error(request, "Unsupported file format.")
+        # Check if the file exists on the server
+        if not os.path.exists(file_path):
+            messages.error(request, "The file is missing from the server.")
+            logger.error(f"File not found at path: {file_path}")
+            return redirect("analyse:upload")
+
+        # Load the file data into a DataFrame
+        if file_path.endswith(".csv"):
+            df = pd.read_csv(file_path)
+        elif file_path.endswith(".xlsx"):
+            df = pd.read_excel(file_path, engine="openpyxl")
+        else:
+            messages.error(request, "Unsupported file format. Please upload a CSV or Excel file.")
+            logger.error(f"Unsupported file format: {file_path}")
+            return redirect("analyse:upload")
+
+        # Extract numeric columns
+        numeric_columns = df.select_dtypes(include="number").columns.tolist()
+        if not numeric_columns:
+            messages.error(request, "The file does not contain any numeric columns.")
+            logger.error("No numeric columns found in the uploaded file.")
+            return redirect("analyse:upload")
+
+        # Generate correlation heatmap and regression plot
+        correlation_heatmap, regression_plot = None, None
+        try:
+            if numeric_columns:
+                correlation_heatmap = create_correlation_heatmap(df)
+            if len(numeric_columns) >= 2:
+                regression_plot = create_regression_plot(df, numeric_columns[0], numeric_columns[1])
+        except Exception as e:
+            messages.error(request, "An error occurred while generating visualizations.")
+            logger.error(f"Error generating visualizations: {e}")
+            return redirect("analyse:upload")
+
+        # Render the visualization template
+        return render(request, "analysis/correlation_regression.html", {
+            "correlation_heatmap": correlation_heatmap,
+            "regression_plot": regression_plot,
+            "numeric_columns": numeric_columns,
+            "file_id": file_id,
+        })
+
+    except Exception as e:
+        # Catch any unexpected errors
+        messages.error(request, "An unexpected error occurred.")
+        logger.error(f"Unexpected error in correlation_and_regression_visualization: {e}")
         return redirect("analyse:upload")
 
-    correlation_matrix = df.corr()
-
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", vmin=-1, vmax=1)
-    heatmap_buffer = BytesIO()
-    plt.savefig(heatmap_buffer, format="png")
-    plt.close()
-    heatmap_base64 = base64.b64encode(heatmap_buffer.getvalue()).decode()
-    heatmap_buffer.close()
-
-    reg_plots = []
-    for i in range(len(correlation_matrix.columns)):
-        for j in range(i + 1, len(correlation_matrix.columns)):
-            col1, col2 = correlation_matrix.columns[i], correlation_matrix.columns[j]
-            if abs(correlation_matrix.loc[col1, col2]) > 0.7:
-                plt.figure(figsize=(6, 4))
-                sns.regplot(x=col1, y=col2, data=df)
-                plt.title(f"Regression between {col1} and {col2}")
-
-                buffer = BytesIO()
-                plt.savefig(buffer, format="png")
-                plt.close()
-                plot_base64 = base64.b64encode(buffer.getvalue()).decode()
-                buffer.close()
-
-                reg_plots.append(
-                    (f"Correlation between {col1} and {col2}", plot_base64)
-                )
-    context = {
-        "correlation_matrix": correlation_matrix.to_html(classes="table table-striped"),
-        "heatmap_base64": heatmap_base64,
-        "reg_plots": reg_plots,
-        "file_id": file_id,
-    }
-
-    return render(
-        request,
-        "analysis/correlation_analysis.html",
-        context,
-    )
 
 
+
+
+# # Correlation and regression analysis
+# @login_required
+# def correlation_analysis(request, file_id):
+#     try:
+#         logger.info(f"Récupération du fichier avec ID : {file_id}")
+#         # Récupérer le fichier téléchargé
+#         uploaded_file = get_object_or_404(UploadedFile, id=file_id, user=request.user)
+#         file_path = uploaded_file.file.path
+#         logger.info(f"Chemin du fichier : {file_path}")
+
+#         # Charger le fichier dans un DataFrame
+#         if file_path.endswith(".csv"):
+#             df = pd.read_csv(file_path)
+#         elif file_path.endswith((".xls", ".xlsx")):
+#             df = pd.read_excel(file_path, engine="openpyxl")
+#         else:
+#             messages.error(request, "Format de fichier non supporté.")
+#             return redirect("analyse:upload")
+#         logger.info(f"Fichier chargé avec succès. Dimensions du DataFrame : {df.shape}")
+
+#         # Vérifier la présence de données
+#         if df.empty:
+#             logger.warning("Le fichier est vide.")
+#             messages.error(request, "Le fichier est vide.")
+#             return redirect("analyse:upload")
+
+#         # Vérifier la présence de colonnes numériques
+#         numeric_columns = df.select_dtypes(include="number").columns
+#         logger.info(f"Colonnes numériques trouvées : {list(numeric_columns)}")
+#         if len(numeric_columns) < 2:
+#             messages.error(
+#                 request,
+#                 "Le fichier ne contient pas suffisamment de colonnes numériques pour la corrélation.",
+#             )
+#             return redirect("analyse:upload")
+
+#         # Calculer la matrice de corrélation
+#         correlation_matrix = df.corr()
+#         logger.info("Matrice de corrélation calculée avec succès.")
+
+#         # Générer le heatmap
+#         plt.figure(figsize=(10, 8))
+#         sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", vmin=-1, vmax=1)
+#         heatmap_buffer = BytesIO()
+#         plt.savefig(heatmap_buffer, format="png")
+#         plt.close()
+#         heatmap_base64 = base64.b64encode(heatmap_buffer.getvalue()).decode()
+#         heatmap_buffer.close()
+#         logger.info("Heatmap généré avec succès.")
+
+#         # Préparer les graphiques de régression
+#         reg_plots = []
+#         for i in range(len(correlation_matrix.columns)):
+#             for j in range(i + 1, len(correlation_matrix.columns)):
+#                 col1, col2 = correlation_matrix.columns[i], correlation_matrix.columns[j]
+#                 if abs(correlation_matrix.loc[col1, col2]) > 0.7:
+#                     plt.figure(figsize=(6, 4))
+#                     sns.regplot(x=col1, y=col2, data=df)
+#                     plt.title(f"Régression entre {col1} et {col2}")
+
+#                     buffer = BytesIO()
+#                     plt.savefig(buffer, format="png")
+#                     plt.close()
+#                     plot_base64 = base64.b64encode(buffer.getvalue()).decode()
+#                     buffer.close()
+
+#                     reg_plots.append(
+#                         (f"Corrélation entre {col1} et {col2}", plot_base64)
+#                     )
+#         logger.info("Graphiques de régression générés avec succès.")
+
+#         # Rendre le contexte
+#         context = {
+#             "correlation_matrix": correlation_matrix.to_html(classes="table table-striped"),
+#             "heatmap_base64": heatmap_base64,
+#             "reg_plots": reg_plots,
+#             "file_id": file_id,
+#         }
+
+#         return render(
+#             request,
+#             "analysis/correlation_analysis.html",
+#             context,
+#         )
+#     except Exception as e:
+#         # Journaliser les erreurs pour le diagnostic
+#         logger.error(f"Erreur dans correlation_analysis : {str(e)}", exc_info=True)
+#         messages.error(request, "Une erreur est survenue lors de l'analyse.")
+#         return redirect("analyse:upload")
+# Visualization avec option
 @login_required
 def visualization_options(request, file_id):
     uploaded_file = get_object_or_404(UploadedFile, id=file_id)
@@ -905,28 +1063,28 @@ def delete_file(request, file_id):
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 #Houssam aoun (Sa partie)
 # Example View for Correlation Analysis
-@login_required
-def correlation_view(request, file_id):
-    uploaded_file = get_object_or_404(UploadedFile, id=file_id, user=request.user)
-    file_path = uploaded_file.file.path
+# @login_required
+# def correlation_view(request, file_id):
+#     uploaded_file = get_object_or_404(UploadedFile, id=file_id, user=request.user)
+#     file_path = uploaded_file.file.path
 
-    try:
-        if file_path.endswith(".csv"):
-            df = pd.read_csv(file_path)
-        elif file_path.endswith(".xlsx"):
-            df = pd.read_excel(file_path, engine="openpyxl")
-        else:
-            raise ValueError("Unsupported file format.")
+#     try:
+#         if file_path.endswith(".csv"):
+#             df = pd.read_csv(file_path)
+#         elif file_path.endswith(".xlsx"):
+#             df = pd.read_excel(file_path, engine="openpyxl")
+#         else:
+#             raise ValueError("Unsupported file format.")
         
-        col1 = request.GET.get("col1")
-        col2 = request.GET.get("col2")
-        result = correlation_analysis(df, col1, col2)
+#         col1 = request.GET.get("col1")
+#         col2 = request.GET.get("col2")
+#         result = correlation_analysis(df, col1, col2)
 
-    except Exception as e:
-        messages.error(request, f"Error: {str(e)}")
-        return redirect("analyse:upload")
+#     except Exception as e:
+#         messages.error(request, f"Error: {str(e)}")
+#         return redirect("analyse:upload")
 
-    return JsonResponse(result)
+#     return JsonResponse(result)
 
 # Example View for Interactive Visualization
 def visualization_view(request):
@@ -993,3 +1151,108 @@ def interactive_visualization_view(request, file_id):
         return redirect("analyse:upload")
 
     return HttpResponse(html_chart)
+
+# Fonction loi_probability
+def loi_probability(request):
+    """
+    View to calculate probabilities for different distributions and display results on the same page.
+    """
+    result = None
+    error = None
+
+    if request.method == 'POST':
+        distribution = request.POST.get('distribution')  # Type of distribution
+        params = {}  # Initialize an empty dictionary for parameters
+
+        try:
+            # Extract parameters based on the distribution
+            if distribution == 'uniform_discrete':
+                params = {
+                    'a': float(request.POST.get('a', 0)),
+                    'b': float(request.POST.get('b', 1)),
+                    'x': float(request.POST.get('x', 0)),
+                }
+                a, b, x = params['a'], params['b'], params['x']
+                if a > b:
+                    raise ValueError("For uniform discrete distribution, 'a' must be less than 'b'.")
+                result = 1 / (b - a + 1) if a <= x <= b else 0
+
+            elif distribution == 'binomial':
+                params = {
+                    'n': int(request.POST.get('n', 1)),
+                    'p': float(request.POST.get('p', 0.5)),
+                    'k': int(request.POST.get('k', 0)),
+                }
+                n, p, k = params['n'], params['p'], params['k']
+                if not (0 <= p <= 1):
+                    raise ValueError("For binomial distribution, 'p' must be between 0 and 1.")
+                if k < 0 or k > n:
+                    raise ValueError("For binomial distribution, 'k' must be between 0 and 'n'.")
+                result = stats.binom.pmf(k, n, p)
+
+            elif distribution == 'bernoulli':
+                params = {
+                    'p': float(request.POST.get('p', 0.5)),
+                    'x': int(request.POST.get('x', 0)),
+                }
+                p, x = params['p'], params['x']
+                if not (0 <= p <= 1):
+                    raise ValueError("For Bernoulli distribution, 'p' must be between 0 and 1.")
+                if x not in [0, 1]:
+                    raise ValueError("For Bernoulli distribution, 'x' must be 0 or 1.")
+                result = stats.bernoulli.pmf(x, p)
+
+            elif distribution == 'poisson':
+                params = {
+                    'lambda': float(request.POST.get('lambda', 1)),
+                    'k': int(request.POST.get('k', 0)),
+                }
+                lam, k = params['lambda'], params['k']
+                if lam <= 0:
+                    raise ValueError("For Poisson distribution, 'lambda' must be greater than 0.")
+                result = stats.poisson.pmf(k, lam)
+
+            elif distribution == 'uniform_continuous':
+                params = {
+                    'a': float(request.POST.get('a', 0)),
+                    'b': float(request.POST.get('b', 1)),
+                    'x': float(request.POST.get('x', 0)),
+                }
+                a, b, x = params['a'], params['b'], params['x']
+                if a >= b:
+                    raise ValueError("For uniform continuous distribution, 'a' must be less than 'b'.")
+                result = 1 / (b - a) if a <= x <= b else 0
+
+            elif distribution == 'normal':
+                params = {
+                    'mu': float(request.POST.get('mu', 0)),
+                    'sigma': float(request.POST.get('sigma', 1)),
+                    'x': float(request.POST.get('x', 0)),
+                }
+                mu, sigma, x = params['mu'], params['sigma'], params['x']
+                if sigma <= 0:
+                    raise ValueError("For normal distribution, 'sigma' must be greater than 0.")
+                result = stats.norm.pdf(x, mu, sigma)
+
+            elif distribution == 'exponential':
+                params = {
+                    'lambda': float(request.POST.get('lambda', 1)),
+                    'x': float(request.POST.get('x', 0)),
+                }
+                lam, x = params['lambda'], params['x']
+                if lam <= 0:
+                    raise ValueError("For exponential distribution, 'lambda' must be greater than 0.")
+                result = lam * np.exp(-lam * x) if x >= 0 else 0
+
+            else:
+                raise ValueError("Invalid distribution selected.")
+
+        except ValueError as ve:
+            error = str(ve)
+        except Exception as e:
+            error = f"An unexpected error occurred: {str(e)}"
+
+    return render(request, 'analysis/loi_probability.html', {
+        'result': result,
+        'error': error,
+    })

@@ -15,7 +15,7 @@ class UploadFileForm(forms.ModelForm):
             raise forms.ValidationError("File size exceeds 10 MB.")
         if not uploaded_file.name.lower().endswith((".csv", ".xls", ".xlsx")):
             raise forms.ValidationError("Unsupported file format.")
-        if uploaded_file.size ==0:
+        if uploaded_file.size <=0:
             raise forms.ValidationError("The file es empty.")
         return uploaded_file
 
@@ -70,7 +70,7 @@ class VisualizationForm(forms.Form):
         ("histogram", "Histogram"),
         ("boxplot", "Box Plot"),
         ("barchart", "Bar Chart"),
-        ("correlation_heatmap", "Correlation Heatmap"),
+        # ("correlation_heatmap", "Correlation Heatmap"),
     ]
 
     visualization_type = forms.ChoiceField(

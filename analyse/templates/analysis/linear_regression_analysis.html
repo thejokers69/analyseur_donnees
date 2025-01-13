@@ -1,0 +1,8 @@
+<h1>Linear Regression Analysis Results</h1>
+{% if model_results %}
+    <p>Intercept: {{ model_results.intercept }}</p>
+    <p>Coefficients: {{ model_results.coefficients }}</p>
+    <p>Mean Squared Error: {{ model_results.mean_squared_error }}</p>
+{% else %}
+    <p>No results available</p>
+{% endif %}

@@ -56,13 +56,13 @@ def calculate_statistics(df):
 
 
 # Correlation Analysis
-def correlation_analysis(data: pd.DataFrame, col1: str, col2: str) -> dict:
-    if col1 not in data.columns or col2 not in data.columns:
-        raise ValueError(f"Columns {col1} or {col2} not found in dataset.")
-    if data[col1].isnull().any() or data[col2].isnull().any():
-        raise ValueError("Columns contain missing values.")
-    correlation, _ = pearsonr(data[col1], data[col2])
-    return {"correlation_coefficient": correlation}
+# def correlation_analysis(data: pd.DataFrame, col1: str, col2: str) -> dict:
+#     if col1 not in data.columns or col2 not in data.columns:
+#         raise ValueError(f"Columns {col1} or {col2} not found in dataset.")
+#     if data[col1].isnull().any() or data[col2].isnull().any():
+#         raise ValueError("Columns contain missing values.")
+#     correlation, _ = pearsonr(data[col1], data[col2])
+#     return {"correlation_coefficient": correlation}
 
 # Linear Regression Analysis
 def linear_regression_analysis(data: pd.DataFrame, x_col: str, y_col: str) -> dict:

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Personnaliser l'Analyse</h2>
+    <form method="POST" class="mt-4">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="columns" class="form-label">Colonnes à Analyser</label>
+            <select name="columns" id="columns" class="form-select" multiple required>
+                {% for column in form.columns.field.choices %}
+                <option value="{{ column.0 }}">{{ column.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="metrics" class="form-label">Statistiques à Calculer</label>
+            <div class="form-check">
+                <input type="checkbox" name="mean" id="mean" class="form-check-input" {% if form.mean.value %}checked{% endif %}>
+                <label for="mean" class="form-check-label">Moyenne</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" name="median" id="median" class="form-check-input" {% if form.median.value %}checked{% endif %}>
+                <label for="median" class="form-check-label">Médiane</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" name="mode" id="mode" class="form-check-input" {% if form.mode.value %}checked{% endif %}>
+                <label for="mode" class="form-check-label">Mode</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" name="variance" id="variance" class="form-check-input" {% if form.variance.value %}checked{% endif %}>
+                <label for="variance" class="form-check-label">Variance</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" name="std_dev" id="std_dev" class="form-check-input" {% if form.std_dev.value %}checked{% endif %}>
+                <label for="std_dev" class="form-check-label">Écart-Type</label>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Lancer l'Analyse</button>
+    </form>
+</div>
+{% endblock %}
