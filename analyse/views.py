@@ -341,7 +341,9 @@ def correlation_analysis(request, file_id):
         return redirect("analyse:upload")
 
     correlation_matrix = df.corr()
+    logger.debug(f"Correlation Matrix:\n{correlation_matrix}")
 
+    # Static heatmap
     plt.figure(figsize=(10, 8))
     sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", vmin=-1, vmax=1)
     heatmap_buffer = BytesIO()
@@ -350,6 +352,17 @@ def correlation_analysis(request, file_id):
     heatmap_base64 = base64.b64encode(heatmap_buffer.getvalue()).decode()
     heatmap_buffer.close()
 
+    # Interactive heatmap
+    interactive_heatmap = px.imshow(
+        correlation_matrix,
+        text_auto=True,
+        color_continuous_scale=["green", "yellow", "orange", "red"],
+        title="Interactive Correlation Heatmap",
+        labels={"x": "Columns", "y": "Columns", "color": "Correlation"},
+    )
+    interactive_heatmap_html = interactive_heatmap.to_html(full_html=False)
+
+    # Static regression plots
     reg_plots = []
     for i in range(len(correlation_matrix.columns)):
         for j in range(i + 1, len(correlation_matrix.columns)):
@@ -358,19 +371,31 @@ def correlation_analysis(request, file_id):
                 plt.figure(figsize=(6, 4))
                 sns.regplot(x=col1, y=col2, data=df)
                 plt.title(f"Regression between {col1} and {col2}")
-
                 buffer = BytesIO()
                 plt.savefig(buffer, format="png")
                 plt.close()
                 plot_base64 = base64.b64encode(buffer.getvalue()).decode()
                 buffer.close()
+                reg_plots.append((f"Correlation between {col1} and {col2}", plot_base64))
 
-                reg_plots.append(
-                    (f"Correlation between {col1} and {col2}", plot_base64)
-                )
+    # Fallback plot if no regression plots available
+    if not reg_plots and len(correlation_matrix.columns) >= 2:
+        col1, col2 = correlation_matrix.columns[:2]
+        plt.figure(figsize=(6, 4))
+        sns.scatterplot(x=col1, y=col2, data=df)
+        plt.title(f"Scatter Plot: {col1} vs {col2}")
+        buffer = BytesIO()
+        plt.savefig(buffer, format="png")
+        plt.close()
+        fallback_plot = base64.b64encode(buffer.getvalue()).decode()
+        buffer.close()
+        reg_plots.append((f"Scatter Plot: {col1} vs {col2}", fallback_plot))
+
+    # Context for rendering
     context = {
         "correlation_matrix": correlation_matrix.to_html(classes="table table-striped"),
         "heatmap_base64": heatmap_base64,
+        "interactive_heatmap_html": interactive_heatmap_html,
         "reg_plots": reg_plots,
         "file_id": file_id,
     }

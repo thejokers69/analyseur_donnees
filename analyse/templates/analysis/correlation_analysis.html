@@ -1,4 +1,3 @@
-{% comment %} /Users/thejoker/project-of-AS/analyseur_donnees/analyse/templates/analysis/correlation_analysis.html {% endcomment %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="fr">
@@ -18,75 +17,58 @@
 {% include 'components/navbar.html' %}
 
 <div class="container mt-5">
-    {% if messages %}
-        <div class="container mt-3">
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
+    <h2 class="text-center">Analyse de Corrélation</h2>
 
-    <h2 class="mb-4">Analyse de Corrélation</h2>
-
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" action="{% url 'analyse:correlation_analysis' %}" id="correlationForm">
-                <div class="row">
-                    <div class="col-md-5 mb-3">
-                        <label for="col1" class="form-label">Sélectionnez la première colonne :</label>
-                        <select class="form-select" id="col1" name="col1" required>
-                            {% for column in columns %}
-                                <option value="{{ column }}">{{ column }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-5 mb-3">
-                        <label for="col2" class="form-label">Sélectionnez la deuxième colonne :</label>
-                        <select class="form-select" id="col2" name="col2" required>
-                            {% for column in columns %}
-                                <option value="{{ column }}">{{ column }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">Analyser</button>
-                    </div>
-                </div>
-            </form>
+    <!-- Static Correlation Matrix -->
+    <div class="mt-4">
+        <h3>Matrice de Corrélation (Statique)</h3>
+        <div class="table-responsive">
+            {{ correlation_matrix|safe }}
         </div>
     </div>
 
-    {% if correlation_result %}
-        <div class="card mb-4">
-            <div class="card-body">
-                <h4>Résultats de l'Analyse</h4>
-                <p><strong>Coefficient de corrélation :</strong> {{ correlation_result.correlation_coefficient }}</p>
+    <!-- Static Heatmap -->
+    <div class="mt-4">
+        <h3>Carte Thermique (Statique)</h3>
+        <img src="data:image/png;base64,{{ heatmap_base64 }}" alt="Heatmap" class="img-fluid" />
+    </div>
 
-                <div id="correlationPlot" style="width: 100%; height: 400px;"></div>
-                <script>
-                    var trace = {
-                        x: {{ scatter_data.x|safe }},
-                        y: {{ scatter_data.y|safe }},
-                        mode: 'markers',
-                        type: 'scatter'
-                    };
-                    var data = [trace];
-                    var layout = {
-                        title: 'Corrélation entre {{ col1 }} et {{ col2 }}',
-                        xaxis: { title: '{{ col1 }}' },
-                        yaxis: { title: '{{ col2 }}' }
-                    };
-                    Plotly.newPlot('correlationPlot', data, layout);
-                </script>
+    <!-- Interactive Heatmap -->
+    <div class="mt-4">
+        <h3>Carte Thermique (Interactive)</h3>
+        <div>{{ interactive_heatmap_html|safe }}</div>
+    </div>
+
+    <!-- Static Regression Plots -->
+    <div class="mt-4">
+        <h3>Graphiques de Régression (Statique)</h3>
+        <div class="row">
+            {% for title, plot in reg_plots %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card">
+                    <img src="data:image/png;base64,{{ plot }}" alt="{{ title }}" class="card-img-top img-fluid" />
+                    <div class="card-body">
+                        <h5 class="card-title">{{ title }}</h5>
+                    </div>
+                </div>
             </div>
+            {% empty %}
+            <p>Aucun graphique de régression disponible.</p>
+            {% endfor %}
         </div>
-    {% endif %}
+    </div>
 
-    <a href="{% url 'analyse:home' %}" class="btn btn-secondary">Retour à l'Accueil</a>
+    <!-- Interactive Regression Plots -->
+    <div class="mt-4">
+        <h3>Graphiques de Régression (Interactifs)</h3>
+        {% for interactive_plot in interactive_reg_plots %}
+            <div class="mt-3">{{ interactive_plot|safe }}</div>
+        {% empty %}
+            <p>Aucun graphique de régression disponible.</p>
+        {% endfor %}
+    </div>
 </div>
+
 
 <!-- Bootstrap JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
