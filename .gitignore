@@ -59,3 +59,7 @@ htmlcov/
 .dmypy.json
 .pyre/
 .pytype/
+
+
+# Macos 
+.DS_Store
