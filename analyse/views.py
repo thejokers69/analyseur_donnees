@@ -1060,7 +1060,7 @@ def delete_file(request, file_id):
         return JsonResponse({"status": "success"})
     except Exception as e:
         logger.error(f"Error deleting file: {str(e)}")
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+        return JsonResponse({"status": "error", "message": "An internal error has occurred."}, status=500)
 #Houssam aoun (Sa partie)
 # Example View for Correlation Analysis
 # @login_required
