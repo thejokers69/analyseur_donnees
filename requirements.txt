@@ -55,3 +55,5 @@ threadpoolctl==3.5.0
 tqdm==4.67.1
 tzdata==2024.2
 urllib3==2.2.3
+
+cryptography==44.0.2
