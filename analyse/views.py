@@ -569,6 +569,7 @@ def visualization_options(request, file_id):
     if request.method == "POST":
         selected_columns = request.POST.getlist("columns")
         visualization_type = request.POST.get("visualization")
+        visualization_type = visualization_type.replace('\r\n', '').replace('\n', '')
 
         # Log selected columns and visualization type
         logger.debug(f"Selected columns: {selected_columns}")
