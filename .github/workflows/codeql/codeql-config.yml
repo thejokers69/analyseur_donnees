@@ -1,0 +1,26 @@
+name: "Custom CodeQL Configuration"
+
+path-classifiers:
+  test:
+    - "*/tests/**/*.py"
+    - "*/test_*.py"
+
+  template:
+    - "*/templates/**/*.html"
+
+queries:
+  - name: Extended Security Queries
+    uses: security-extended
+  - name: Security and Quality Queries
+    uses: security-and-quality
+
+query-filters:
+  - exclude:
+      id: py/path-injection
+      path: "*/tests/**/*.py"
+
+paths-ignore:
+  - "**/migrations/**"
+  - "**/.venv/**"
+  - "**/node_modules/**"
+  - "Captures/**"
