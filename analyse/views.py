@@ -572,7 +572,8 @@ def visualization_options(request, file_id):
         visualization_type = visualization_type.replace('\r\n', '').replace('\n', '')
 
         # Log selected columns and visualization type
-        logger.debug(f"Selected columns: {selected_columns}")
+        sanitized_columns = [col.replace('\r\n', '').replace('\n', '') for col in selected_columns]
+        logger.debug(f"Selected columns: {sanitized_columns}")
         logger.debug(f"Visualization type: {visualization_type}")
 
         if not selected_columns:
