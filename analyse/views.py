@@ -516,29 +516,29 @@ def correlation_and_regression_visualization(request, file_id):
 #                     plot_base64 = base64.b64encode(buffer.getvalue()).decode()
 #                     buffer.close()
 
-#                     reg_plots.append(
-#                         (f"Corrélation entre {col1} et {col2}", plot_base64)
-#                     )
-#         logger.info("Graphiques de régression générés avec succès.")
 
-#         # Rendre le contexte
-#         context = {
-#             "correlation_matrix": correlation_matrix.to_html(classes="table table-striped"),
-#             "heatmap_base64": heatmap_base64,
-#             "reg_plots": reg_plots,
-#             "file_id": file_id,
-#         }
 
-#         return render(
-#             request,
-#             "analysis/correlation_analysis.html",
-#             context,
-#         )
-#     except Exception as e:
-#         # Journaliser les erreurs pour le diagnostic
-#         logger.error(f"Erreur dans correlation_analysis : {str(e)}", exc_info=True)
-#         messages.error(request, "Une erreur est survenue lors de l'analyse.")
-#         return redirect("analyse:upload")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Visualization avec option
 @login_required
 def visualization_options(request, file_id):
