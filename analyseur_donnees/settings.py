@@ -83,13 +83,12 @@ CACHES = {
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", "analyseur_donnees"),
-        "USER": os.getenv("DB_USER", "thejoker"),
-        "PASSWORD": os.getenv("DB_PASSWORD", "sexcigarez2"),
-        "HOST": os.getenv("DB_HOST", "localhost"),
-        "PORT": os.getenv("DB_PORT", "5443"),
-        "OPTIONS": {"options": "-c search_path=public"},
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": os.getenv("MYSQL_DB_NAME", "analyseur_donnees"),
+        "USER": os.getenv("MYSQL_DB_USER", "root"),
+        "PASSWORD": os.getenv("MYSQL_DB_PASSWORD", "@sexcigareZ2"),
+        "HOST": os.getenv("MYSQL_DB_HOST", "localhost"),
+        "PORT": os.getenv("MYSQL_DB_PORT", "3306"),
     }
 }
 
@@ -136,26 +135,13 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Redirige les utilisateurs vers la page de profil après la connexion
-LOGIN_REDIRECT_URL = 'analyse:home'
+LOGIN_REDIRECT_URL = "analyse:home"
 LOGOUT_REDIRECT_URL = "analyse:home"
-LOGIN_URL = 'analyse:login'
-
-# MailGun configurations:
-MAILGUN_API_KEY = os.getenv("MAILGUN_API_KEY")
-MAILGUN_DOMAIN = os.getenv("MAILGUN_DOMAIN")
-
-# Email configurations
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.mailgun.org'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'brad@sandbox4b7f749321b54e59b9aac9acc0899e45.mailgun.org'
-EMAIL_HOST_PASSWORD = '2f7e72509c4996f404cafb0dee660230-da554c25-a1ca5ab7'
-DEFAULT_FROM_EMAIL = 'brad@sandbox4b7f749321b54e59b9aac9acc0899e45.mailgun.org'
+LOGIN_URL = "analyse:login"
 
 # Mdeia files configurations
-MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads/')
-MEDIA_URL = '/uploads/'
+MEDIA_ROOT = os.path.join(BASE_DIR, "uploads/")
+MEDIA_URL = "/uploads/"
 
 # Logging configurations
 LOGGING = {
