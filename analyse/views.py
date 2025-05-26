@@ -486,47 +486,6 @@ def correlation_and_regression_visualization(request, file_id):
 #             )
 #             return redirect("analyse:upload")
 
-#         # Calculer la matrice de corrélation
-#         correlation_matrix = df.corr()
-#         logger.info("Matrice de corrélation calculée avec succès.")
-
-#         # Générer le heatmap
-#         plt.figure(figsize=(10, 8))
-#         sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", vmin=-1, vmax=1)
-#         heatmap_buffer = BytesIO()
-#         plt.savefig(heatmap_buffer, format="png")
-#         plt.close()
-#         heatmap_base64 = base64.b64encode(heatmap_buffer.getvalue()).decode()
-#         heatmap_buffer.close()
-#         logger.info("Heatmap généré avec succès.")
-
-#         # Préparer les graphiques de régression
-#         reg_plots = []
-#         for i in range(len(correlation_matrix.columns)):
-#             for j in range(i + 1, len(correlation_matrix.columns)):
-#                 col1, col2 = correlation_matrix.columns[i], correlation_matrix.columns[j]
-#                 if abs(correlation_matrix.loc[col1, col2]) > 0.7:
-#                     plt.figure(figsize=(6, 4))
-#                     sns.regplot(x=col1, y=col2, data=df)
-#                     plt.title(f"Régression entre {col1} et {col2}")
-
-#                     buffer = BytesIO()
-#                     plt.savefig(buffer, format="png")
-#                     plt.close()
-#                     plot_base64 = base64.b64encode(buffer.getvalue()).decode()
-#                     buffer.close()
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
