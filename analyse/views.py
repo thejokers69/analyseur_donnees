@@ -1017,6 +1017,11 @@ def update_cell(request, file_id):
 def delete_file(request, file_id):
     try:
         uploaded_file = get_object_or_404(UploadedFile, id=file_id, user=request.user)
+
+        # Delete the file from the filesystem
+        if os.path.exists(uploaded_file.file.path):
+            os.remove(uploaded_file.file.path)
+
         uploaded_file.delete()
         return JsonResponse({"status": "success"})
     except Exception as e:

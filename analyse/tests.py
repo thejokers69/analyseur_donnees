@@ -137,3 +137,20 @@ class AnalyseurTests(TestCase):
         for url in protected_urls:
             response = self.client.get(url)
             self.assertEqual(response.status_code, 302)  # Redirect to login page
+
+    def test_delete_file(self):
+        """Test deleting a file."""
+        # Ensure the file exists before deletion
+        self.assertTrue(UploadedFile.objects.filter(id=self.uploaded_file.id).exists())
+        file_path = self.uploaded_file.file.path
+        self.assertTrue(os.path.exists(file_path))
+
+        # Delete the file
+        url = reverse("analyse:delete_file", args=[self.uploaded_file.id])
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "success")
+
+        # Ensure the file is deleted from the database and the filesystem
+        self.assertFalse(UploadedFile.objects.filter(id=self.uploaded_file.id).exists())
+        self.assertFalse(os.path.exists(file_path))
