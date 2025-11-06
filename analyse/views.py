@@ -1017,6 +1017,10 @@ def update_cell(request, file_id):
 def delete_file(request, file_id):
     try:
         uploaded_file = get_object_or_404(UploadedFile, id=file_id, user=request.user)
+
+        # Delete the file using Django's storage abstraction
+        uploaded_file.file.delete(save=False)
+
         uploaded_file.delete()
         return JsonResponse({"status": "success"})
     except Exception as e:
