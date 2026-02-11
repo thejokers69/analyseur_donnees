@@ -251,3 +251,4 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 environment.yml
+.cache_ggshield

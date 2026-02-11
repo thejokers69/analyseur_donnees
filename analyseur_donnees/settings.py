@@ -92,6 +92,32 @@ DATABASES = {
     }
 }
 
+# Optional MySQL SSL configuration. Set these environment variables if your MySQL
+# server requires TLS/SSL. Paths should be absolute or relative to the project root.
+mysql_ssl_mode = os.getenv("MYSQL_SSL_MODE", "DISABLED")
+mysql_ssl_ca = os.getenv("MYSQL_SSL_CA", "")
+mysql_ssl_cert = os.getenv("MYSQL_SSL_CERT", "")
+mysql_ssl_key = os.getenv("MYSQL_SSL_KEY", "")
+
+# Build OPTIONS only when SSL is enabled or files are provided
+db_options = {}
+if mysql_ssl_mode and mysql_ssl_mode.upper() != "DISABLED":
+    # Django's MySQL backend passes `ssl` dict to mysqlclient / PyMySQL
+    ssl_options = {}
+    if mysql_ssl_ca:
+        ssl_options["ca"] = mysql_ssl_ca
+    if mysql_ssl_cert:
+        ssl_options["cert"] = mysql_ssl_cert
+    if mysql_ssl_key:
+        ssl_options["key"] = mysql_ssl_key
+    if ssl_options:
+        db_options["ssl"] = ssl_options
+    # Some connectors support an ssl_mode param
+    db_options["ssl_mode"] = mysql_ssl_mode
+
+if db_options:
+    DATABASES["default"]["OPTIONS"] = db_options
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators

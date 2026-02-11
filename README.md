@@ -56,7 +56,7 @@ Créer un outil convivial et fonctionnel pour analyser des données et produire 
     ```
 
 3. **Configurez les paramètres du projet :**
-   
+
     - Créez un fichier `.env` dans le répertoire racine du projet et ajoutez les paramètres nécessaires.
     - Alternativement, vous pouvez configurer directement dans `settings.py` :
       - `SECRET_KEY`, `DEBUG`, `STATIC_ROOT`, `MEDIA_ROOT`
@@ -68,6 +68,7 @@ Créer un outil convivial et fonctionnel pour analyser des données et produire 
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
     MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
     ```
+
     Exemple dans `settings.py` pour PostgreSQL :
 
     ```python
@@ -82,6 +83,7 @@ Créer un outil convivial et fonctionnel pour analyser des données et produire 
         }
     }
     ```
+
     Exemple dans `settings.py` pour SQLite :
 
     ```python
@@ -93,25 +95,25 @@ Créer un outil convivial et fonctionnel pour analyser des données et produire 
     }
     ```
 
-5. **Exécutez les migrations :**
+4. **Exécutez les migrations :**
 
     ```bash
     python manage.py migrate
     ```
 
-6. **Collectez les fichiers statiques :**
+5. **Collectez les fichiers statiques :**
 
     ```bash
     python manage.py collectstatic
     ```
 
-7. **Créez un superutilisateur :**
+6. **Créez un superutilisateur :**
 
     ```bash
     python manage.py createsuperuser
     ```
 
-8. **Lancez le serveur local :**
+7. **Lancez le serveur local :**
 
     ```bash
     python manage.py runserver
@@ -234,7 +236,6 @@ def upload_file(request):
 
 4. **Ouvrez une Pull Request pour révision.**
 
-
 ## 📸 Captures d'écran
 
 #### Page de Connexion
@@ -279,3 +280,30 @@ def upload_file(request):
 #### Page de Téléchargement
 
 ![Téléchargements](Captures/Uploads.png)
+
+---
+
+## 🔐 Database SSL / Secure MySQL connection
+
+If your MySQL server requires TLS/SSL, this project supports configuring the connection via environment variables. Copy `.env.example` to `.env` and fill the values.
+
+Important environment variables (see `.env.example`):
+
+- `MYSQL_DB_NAME`, `MYSQL_DB_USER`, `MYSQL_DB_PASSWORD`, `MYSQL_DB_HOST`, `MYSQL_DB_PORT`
+- `MYSQL_SSL_MODE` (e.g. `VERIFY_IDENTITY`, `VERIFY_CA`, `REQUIRED`, `DISABLED`)
+- `MYSQL_SSL_CA` — path to CA bundle file
+- `MYSQL_SSL_CERT` — path to client certificate (if required)
+- `MYSQL_SSL_KEY` — path to client key (if required)
+
+Place certificate files outside the repository (don't commit them). Use absolute paths in the `.env` file or paths relative to the project root.
+
+Example `.env` entries:
+
+```bash
+MYSQL_SSL_MODE=VERIFY_CA
+MYSQL_SSL_CA=/etc/ssl/certs/ca.pem
+MYSQL_SSL_CERT=/etc/ssl/certs/client-cert.pem
+MYSQL_SSL_KEY=/etc/ssl/private/client-key.pem
+```
+
+When these variables are set and `MYSQL_SSL_MODE` is not `DISABLED`, Django will pass SSL options to the MySQL client connector. Ensure your connector (`mysqlclient` or `PyMySQL`) supports the provided options.
